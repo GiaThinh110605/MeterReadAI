@@ -5,8 +5,9 @@
 
 - Kaggle (Yandex Toloka Water Meters): https://www.kaggle.com/datasets/tapakah68/yandextoloka-water-meters-dataset
 - Dryad: https://datadryad.org/dataset/doi:10.5061/dryad.7d7wm3860
+- Roboflow: https://universe.roboflow.com/traffic-zcg6o/ocr-water-meters/dataset/2
 
-
+- Dùng để test: https://drive.google.com/drive/u/0/folders/18UMXLWPYnHTnGbjmwSutPuWjKZCHdXMW
 
 ## EDA (bản tóm tắt hiện tại)
 
