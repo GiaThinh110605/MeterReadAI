@@ -40,6 +40,7 @@ Các notebook EDA nằm trong thư mục `eda/` để phân tích chất lượn
   - 1 mask chạm biên ảnh
   - Không có lỗi segmentation nghiêm trọng
 
+![Water Meters](README_IMAGE/water_meters.png)
 ![WaterMeters Heatmap](README_IMAGE/heatmap_water_meters.png)
 
 ### Word-Wheel Water Meter Dataset
