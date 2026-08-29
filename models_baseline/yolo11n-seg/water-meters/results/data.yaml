@@ -1,0 +1,8 @@
+
+path: /kaggle/input/datasets/lmgiathnh/water-meters/water_meters
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: reading_region
