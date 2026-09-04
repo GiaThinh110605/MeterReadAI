@@ -1,0 +1,9 @@
+
+path: /kaggle/input/datasets/mementomoriml/merge-dataset/merge_dataset
+
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: reading_region
