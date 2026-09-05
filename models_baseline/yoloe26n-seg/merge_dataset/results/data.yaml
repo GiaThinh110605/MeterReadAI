@@ -1,0 +1,8 @@
+
+path: /teamspace/studios/this_studio/.cache/kagglehub/datasets/lmgiathnh/merge-dataset/versions/1/merge_dataset
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: reading_region
