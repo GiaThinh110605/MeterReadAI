@@ -1,0 +1,9 @@
+
+path: /kaggle/input/datasets/lmgiathnh/word-wheel-water-meter/word_wheel_water_meter
+
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: reading_region
