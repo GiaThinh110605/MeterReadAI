@@ -4,42 +4,70 @@ import requests, os, time
 os.makedirs("images", exist_ok=True)
 
 queries = [
-    # Đồng hồ nước
-    "đồng hồ đo nước Việt Nam",
-    "đồng hồ nước gia đình",
-    "đồng hồ nước dân dụng",
-    "đồng hồ nước công nghiệp",
+    # =========================
+    # ĐỒNG HỒ NƯỚC VIỆT NAM
+    # =========================
+    "đồng hồ nước Việt Nam",
+    "đồng hồ nước dân dụng Việt Nam",
+    "đồng hồ nước hộ gia đình",
+    "đồng hồ nước nhà dân",
 
-    # Đồng hồ điện
+
+    # =========================
+    # MÔI TRƯỜNG / THỰC TẾ
+    # =========================
+    "đồng hồ nước bị bẩn",
+    "đồng hồ nước mới",
+    "đồng hồ nước bị rỉ sét",
+    "đồng hồ nước có nước đọng",
+    "đồng hồ nước bị mờ",
+    "đồng hồ nước bụi bặm",
+    
+
+    # =========================
+    # ĐỒNG HỒ ĐIỆN VIỆT NAM
+    # =========================
     "đồng hồ điện Việt Nam",
-    "đồng hồ đo điện Việt Nam",
-    "công tơ điện Việt Nam",
-    "đồng hồ điện gia đình",
-    "đồng hồ điện dân dụng",
+    "công tơ điện nhà dân",
+    "công tơ điện chung cư",
+    "công tơ điện phòng trọ",
+    "công tơ điện trong hộp",
 
-    # Các loại / góc chụp khác
-    "mặt đồng hồ nước",
-    "mặt đồng hồ điện",
-    "số đồng hồ nước",
-    "số công tơ điện",
+
+    # =========================
+    # MÔI TRƯỜNG / THỰC TẾ
+    # =========================
+    "công tơ điện trong hộp bảo vệ",
+    "công tơ điện cũ",
+    "công tơ điện mới",
+    "công tơ điện bị bẩn",
+    "công tơ điện bị mờ",
+    "công tơ điện ngoài đường",
+
+    # =========================
+    # ẢNH THỰC TẾ / KHÔNG QUÁ SẠCH
+    # =========================
+    "đồng hồ nước ảnh thực tế",
+    "đồng hồ điện ảnh thực tế",
+
 ]
 
 count = len(os.listdir("images"))
 
-while count < 2000:
+while count < 2500:
 
     for query in queries:
-        if count >= 2000:
+        if count >= 2500:
             break
 
         print(f"\nSearching: {query}")
 
         try:
             with DDGS() as ddgs:
-                results = ddgs.images(query, max_results=100)
+                results = ddgs.images(query, max_results=150)
 
                 for r in results:
-                    if count >= 2000:
+                    if count >= 2500:
                         break
 
                     try:
