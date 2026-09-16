@@ -2,72 +2,62 @@ from ddgs import DDGS
 import requests, os, time
 
 os.makedirs("images", exist_ok=True)
-
 queries = [
-    # =========================
-    # ĐỒNG HỒ NƯỚC VIỆT NAM
-    # =========================
-    "đồng hồ nước Việt Nam",
-    "đồng hồ nước dân dụng Việt Nam",
+    # ==========================================
+    # 1. THEO THƯƠNG HIỆU PHỔ BIẾN TẠI VIỆT NAM
+    # ==========================================
+    "đồng hồ nước Asahi",
+    "đồng hồ nước Zenner",
+    "đồng hồ nước Sanwa",
+    "đồng hồ nước Minh Hòa",
+    "đồng hồ nước Komax",
+    "đồng hồ nước Itron",
+    "đồng hồ nước T-Flow",
+    "đồng hồ nước Merlion",
+    "đồng hồ nước Unik",
+
+    # ==========================================
+    # 2. THEO MẶT SỐ & CẤU TẠO BÁNH RĂNG/ĐIỆN TỬ
+    # ==========================================
+    "mặt số đồng hồ nước",
+    "đồng hồ nước mặt kính mờ",
+    "đồng hồ nước cơ học",
+
+    # ==========================================
+    # 3. ĐỊA ĐIỂM & HỘP BẢO VỆ THỰC TẾ
+    # ==========================================
+    "đồng hồ nước nhà dân Việt Nam",
     "đồng hồ nước hộ gia đình",
-    "đồng hồ nước nhà dân",
+    "đồng hồ nước chôn dưới đất",
 
-
-    # =========================
-    # MÔI TRƯỜNG / THỰC TẾ
-    # =========================
+    # ==========================================
+    # 4. ĐIỀU KIỆN MÔI TRƯỜNG / NHIỄU THỰC TẾ (RẤT QUAN TRỌNG CHO TRAIN AI)
+    # ==========================================
     "đồng hồ nước bị bẩn",
-    "đồng hồ nước mới",
+    "đồng hồ nước bám bùn đất",
     "đồng hồ nước bị rỉ sét",
-    "đồng hồ nước có nước đọng",
-    "đồng hồ nước bị mờ",
-    "đồng hồ nước bụi bặm",
-    
-
-    # =========================
-    # ĐỒNG HỒ ĐIỆN VIỆT NAM
-    # =========================
-    "đồng hồ điện Việt Nam",
-    "công tơ điện nhà dân",
-    "công tơ điện chung cư",
-    "công tơ điện phòng trọ",
-    "công tơ điện trong hộp",
-
-
-    # =========================
-    # MÔI TRƯỜNG / THỰC TẾ
-    # =========================
-    "công tơ điện trong hộp bảo vệ",
-    "công tơ điện cũ",
-    "công tơ điện mới",
-    "công tơ điện bị bẩn",
-    "công tơ điện bị mờ",
-    "công tơ điện ngoài đường",
-
-    # =========================
-    # ẢNH THỰC TẾ / KHÔNG QUÁ SẠCH
-    # =========================
-    "đồng hồ nước ảnh thực tế",
-    "đồng hồ điện ảnh thực tế",
-
+    "đồng hồ nước đọng nước mặt kính",
+    "đồng hồ nước bị trầy xước",
+    "đồng hồ nước cũ bẩn",
+    "đồng hồ nước bị mờ mặt",
 ]
 
 count = len(os.listdir("images"))
 
-while count < 2500:
+while count < 3000:
 
     for query in queries:
-        if count >= 2500:
+        if count >= 3000:
             break
 
         print(f"\nSearching: {query}")
 
         try:
             with DDGS() as ddgs:
-                results = ddgs.images(query, max_results=150)
+                results = ddgs.images(query, max_results=200)
 
                 for r in results:
-                    if count >= 2500:
+                    if count >= 3000:
                         break
 
                     try:
@@ -82,7 +72,7 @@ while count < 2500:
                                 f.write(data)
 
                             count += 1
-                            print(f"Downloaded: {count}/2000")
+                            print(f"Downloaded: {count}/3000")
 
                     except:
                         pass
