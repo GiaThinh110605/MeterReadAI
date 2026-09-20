@@ -2,44 +2,62 @@ from ddgs import DDGS
 import requests, os, time
 
 os.makedirs("images", exist_ok=True)
-
 queries = [
-    # Đồng hồ nước
-    "đồng hồ đo nước Việt Nam",
-    "đồng hồ nước gia đình",
-    "đồng hồ nước dân dụng",
-    "đồng hồ nước công nghiệp",
+    # ==========================================
+    # 1. THEO THƯƠNG HIỆU PHỔ BIẾN TẠI VIỆT NAM
+    # ==========================================
+    "đồng hồ nước Asahi",
+    "đồng hồ nước Zenner",
+    "đồng hồ nước Sanwa",
+    "đồng hồ nước Minh Hòa",
+    "đồng hồ nước Komax",
+    "đồng hồ nước Itron",
+    "đồng hồ nước T-Flow",
+    "đồng hồ nước Merlion",
+    "đồng hồ nước Unik",
 
-    # Đồng hồ điện
-    "đồng hồ điện Việt Nam",
-    "đồng hồ đo điện Việt Nam",
-    "công tơ điện Việt Nam",
-    "đồng hồ điện gia đình",
-    "đồng hồ điện dân dụng",
+    # ==========================================
+    # 2. THEO MẶT SỐ & CẤU TẠO BÁNH RĂNG/ĐIỆN TỬ
+    # ==========================================
+    "mặt số đồng hồ nước",
+    "đồng hồ nước mặt kính mờ",
+    "đồng hồ nước cơ học",
 
-    # Các loại / góc chụp khác
-    "mặt đồng hồ nước",
-    "mặt đồng hồ điện",
-    "số đồng hồ nước",
-    "số công tơ điện",
+    # ==========================================
+    # 3. ĐỊA ĐIỂM & HỘP BẢO VỆ THỰC TẾ
+    # ==========================================
+    "đồng hồ nước nhà dân Việt Nam",
+    "đồng hồ nước hộ gia đình",
+    "đồng hồ nước chôn dưới đất",
+
+    # ==========================================
+    # 4. ĐIỀU KIỆN MÔI TRƯỜNG / NHIỄU THỰC TẾ (RẤT QUAN TRỌNG CHO TRAIN AI)
+    # ==========================================
+    "đồng hồ nước bị bẩn",
+    "đồng hồ nước bám bùn đất",
+    "đồng hồ nước bị rỉ sét",
+    "đồng hồ nước đọng nước mặt kính",
+    "đồng hồ nước bị trầy xước",
+    "đồng hồ nước cũ bẩn",
+    "đồng hồ nước bị mờ mặt",
 ]
 
 count = len(os.listdir("images"))
 
-while count < 2000:
+while count < 3000:
 
     for query in queries:
-        if count >= 2000:
+        if count >= 3000:
             break
 
         print(f"\nSearching: {query}")
 
         try:
             with DDGS() as ddgs:
-                results = ddgs.images(query, max_results=100)
+                results = ddgs.images(query, max_results=200)
 
                 for r in results:
-                    if count >= 2000:
+                    if count >= 3000:
                         break
 
                     try:
@@ -54,7 +72,7 @@ while count < 2000:
                                 f.write(data)
 
                             count += 1
-                            print(f"Downloaded: {count}/2000")
+                            print(f"Downloaded: {count}/3000")
 
                     except:
                         pass
