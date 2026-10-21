@@ -301,7 +301,7 @@ Thông qua phân tích ma trận lỗi dự đoán (Prediction Error Matrix & Fa
 - viết code sửa nn sửa các module trong đó tinh chỉnh phù hợp với dữ liệu
 - viết notebook với file yaml mới dựa trên .yaml mô hình bạn cải tiến(ví dụ yolo-11.yaml)
 - clone source và chạy lệnh trong kaggle
-!git clone https://github.com/GiaThinh110605/ultralytics.git
+!git clone https://github.com/GiaThinh110605/MeterReadAI/tree/coordinate
 %cd ultralytics
 !git checkout <feature-name>
 !pip install -e .
