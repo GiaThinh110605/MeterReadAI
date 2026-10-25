@@ -296,6 +296,15 @@ Thông qua phân tích ma trận lỗi dự đoán (Prediction Error Matrix & Fa
    - Tinh chỉnh loss weight cho phần Segmentation Mask Loss và tối ưu ngưỡng $IoU$ trong NMS để giảm thiểu lỗi Localization đối với các ký tự chữ số nhỏ.
 
 ---
+## 9. Hướng dẫn train khi muốn cải tiến mô hình:
+- clone source ultralytics 
+- viết code sửa nn sửa các module trong đó tinh chỉnh phù hợp với dữ liệu
+- viết notebook với file yaml mới dựa trên .yaml mô hình bạn cải tiến(ví dụ yolo-11.yaml)
+- clone source và chạy lệnh trong kaggle
+!git clone -b coordinate https://github.com/GiaThinh110605/MeterReadAI.git
+%cd MeterReadAI/ultralytics
+!pip install -e .
+
 
 ## 9. 📝 Ghi chú & Tài nguyên
 
