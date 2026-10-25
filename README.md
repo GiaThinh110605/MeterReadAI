@@ -304,8 +304,6 @@ Thông qua phân tích ma trận lỗi dự đoán (Prediction Error Matrix & Fa
 !git clone -b coordinate https://github.com/GiaThinh110605/MeterReadAI.git
 %cd MeterReadAI/ultralytics
 !pip install -e .
-%cd /kaggle/working
-
 
 
 ## 9. 📝 Ghi chú & Tài nguyên
