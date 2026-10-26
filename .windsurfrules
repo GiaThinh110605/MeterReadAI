@@ -1,0 +1,21 @@
+# MeterReadAI & WaterFlow — Windsurf Cascade Rules
+
+## Project Overview
+MeterReadAI is an AI-powered water meter reading (YOLO11-seg + OCR) and automated billing management system (WaterFlow).
+
+## Tech Stack Requirements
+1. Frontend: React 18+, TypeScript, Vite, Tailwind CSS v3+
+2. UI Prototype: Google Stitch (https://stitch.withgoogle.com/projects/3346993615529581711)
+3. Backend: FastAPI (Python 3.10+), Pydantic v2
+4. AI Model: YOLO11-seg + OpenCV
+5. Database: SQLite + SQLAlchemy 2.0 ORM
+6. API Design: RESTful API (/api/v1)
+7. Deployment: Docker & Docker Compose
+8. Testing: Pytest
+
+## Domain Integrity & Rules
+- Always validate: currentIndex >= previousIndex. If not, trigger Abnormality flow.
+- Preserve leading zeros in reading sequences (keep as String).
+- Immutable AI records: Never overwrite AIRecognition. Log all human corrections with reasons in MeterReading.
+- Snapshot tariffs: Save InvoiceTierDetail for each invoice to ensure historical calculation reproducibility.
+- TDD & Verification: Run pytest to verify before marking any task as complete.
