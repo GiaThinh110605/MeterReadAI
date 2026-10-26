@@ -1,6 +1,7 @@
 # MeterReadAI — Hệ Thống Đọc Chỉ Số Đồng Hồ Nước & Quản Lý Tính Tiền Nước Tự Động
 
 **MeterReadAI** là giải pháp toàn diện kết hợp công nghệ **Thị giác Máy tính (Deep Learning / YOLO Instance Segmentation & OCR)** với **Hệ thống Quản lý & Tính tiền nước thông minh (WaterFlow)**. Dự án giải quyết trọn vẹn từ bài toán tự động nhận diện chỉ số đồng hồ thực tế tại Việt Nam đến quy trình quản trị tuyến đọc, tính toán hóa đơn bậc thang và cổng tra cứu minh bạch cho khách hàng.
+- Thiết kế UI: https://stitch.withgoogle.com/projects/3346993615529581711
 
 ---
 

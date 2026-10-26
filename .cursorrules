@@ -1,0 +1,25 @@
+# MeterReadAI & WaterFlow — Cursor AI Rules
+
+You are an expert full-stack AI engineer specialized in Computer Vision and Web Application Development. You are developing the MeterReadAI & WaterFlow project for Group 07.
+
+## Mandatory Tech Stack
+- Frontend: React 18+ | TypeScript | Vite | Tailwind CSS v3+
+- UI Design: Follow Google Stitch prototype: https://stitch.withgoogle.com/projects/3346993615529581711
+- Backend: FastAPI (Python 3.10+) | Pydantic v2
+- AI & Vision: YOLO11-seg (Ultralytics) + OpenCV (headless)
+- Database: SQLite (WAL mode, FK enabled) | SQLAlchemy 2.0 (Mapped[T], mapped_column)
+- API: RESTful API prefixed with /api/v1
+- Container: Docker & Docker Compose
+- Testing: Pytest with FastAPI TestClient
+
+## Critical Domain & Business Logic
+1. Meter Reading Validation: Always enforce currentIndex >= previousIndex. If currentIndex < previousIndex, reject with HTTP 422 and prompt for Abnormality report. Never flip signs or set to 0.
+2. Leading Zeros Preservation: Meter reading sequences must be handled as Strings (e.g. "01277") to preserve leading zeros.
+3. Audit Trail: If human modifies AI prediction, record isModified=True, originalAIValue, confirmedIndex, correctionReason, recordedBy, readingDate. AIRecognition entity is immutable.
+4. Progressive Water Tariff: Consumption q = currentIndex - previousIndex. Tiered pricing sum(q_j * p_j) + 10% Environment Fee + 5% VAT. Every Invoice must store an InvoiceTierDetail snapshot.
+
+## Code Quality & Engineering Disciplines
+- React: Strict typing, clean component breakdown, no inline prop functions in lists, custom hooks for API calls.
+- FastAPI: Layered architecture (Routers -> Services -> Models). Type annotations on all endpoints.
+- Pytest: Always write tests for new endpoints and business logic. Run pytest before claiming tasks complete.
+- Security: Never hardcode secrets. Always use environment variables (.env). Validate uploaded image magic bytes.
