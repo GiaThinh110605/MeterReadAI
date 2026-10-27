@@ -540,3 +540,36 @@ print(f"🎭 Mask mAP50: {metrics.seg.map50:.4f}")
   - Trọng số mô hình cải tiến D3: [`enhanced_model/yolo11-coord/water-meters/best.pt`](enhanced_model/yolo11-coord/water-meters/best.pt)
 - ☁️ **Kho dữ liệu đám mây (Google Drive)**: [Google Drive Data Backup](https://drive.google.com/drive/u/0/folders/18UMXLWPYnHTnGbjmwSutPuWjKZCHdXMW)
 - 📌 **Quy chuẩn mã nguồn**: Tuân thủ chuẩn lập trình sạch (Clean Code), TDD với `pytest`, cơ sở dữ liệu tuân thủ chuẩn ACID với SQLite WAL mode, và giao diện chuẩn xác nguyên mẫu Google Stitch.
+
+---
+
+## 12. 🚀 Hướng Dẫn Cài Đặt & Khởi Chạy (Quick Start)
+
+### Cách 1: Khởi chạy bằng Docker Compose (Khuyên dùng)
+```bash
+docker-compose up --build
+```
+- **Frontend UI (Nhân viên tác nghiệp)**: [http://localhost:3000](http://localhost:3000)
+- **Backend API Docs (Swagger UI)**: [http://localhost:8000/api/v1/docs](http://localhost:8000/api/v1/docs)
+
+### Cách 2: Khởi chạy thủ công từng phần
+
+**1. Khởi động Backend (FastAPI):**
+```bash
+cd backend
+pip install -r requirements.txt
+python3 -m uvicorn app.main:app --reload --port 8000
+```
+
+**2. Khởi động Frontend (React + Vite):**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Kiểm thử hệ thống (Pytest):
+```bash
+python3 -m pytest backend/tests -v
+```
+
