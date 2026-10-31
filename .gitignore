@@ -1,4 +1,74 @@
-data/models_baseline/yoloe-v8s-seg/merge/result/mobileclip_blt.ts
-mobileclip_blt.ts
+# Node & Frontend dependencies
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+*/dist/
+
+# Python & Backend
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Cache
+.pytest_cache/
+*/.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Database & Uploads
+*.db
+*.sqlite
+*.sqlite3
+test_meter_read.db
+backend/uploads/raw/*
+backend/uploads/crop/*
+!backend/uploads/raw/.gitkeep
+!backend/uploads/crop/.gitkeep
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Large dataset & temporary files
 /data/
 /images/
+mobileclip_blt.ts
+data/models_baseline/yoloe-v8s-seg/merge/result/mobileclip_blt.ts

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: waterflow_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/meter_read.db:/app/meter_read.db
+      - ./models_baseline:/models_baseline:ro
+    environment:
+      - DATABASE_URL=sqlite:////app/meter_read.db
+      - SECRET_KEY=waterflow-meterreadai-secret-key-2025
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: waterflow_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
