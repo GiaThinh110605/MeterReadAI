@@ -1,14 +1,20 @@
 import React from 'react';
-import { Bell, MapPin, Calendar, User } from 'lucide-react';
+import { Bell, MapPin, Calendar, User, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   currentRouteTitle?: string;
   billingPeriod?: string;
+  userName?: string;
+  userSubtitle?: string;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentRouteTitle = 'Tuyến A01 - P. Bến Nghé',
-  billingPeriod = 'Kỳ 04/2025'
+  billingPeriod = 'Kỳ 04/2025',
+  userName = 'Nguyễn Tuấn',
+  userSubtitle = 'NV Ghi số #NV-4881',
+  onLogout
 }) => {
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-20">
@@ -34,9 +40,19 @@ export const Header: React.FC<HeaderProps> = ({
             <User className="w-5 h-5" />
           </div>
           <div className="hidden sm:block text-left">
-            <p className="text-xs font-bold text-slate-800 leading-tight">Nguyễn Tuấn</p>
-            <p className="text-[11px] text-slate-500 font-medium leading-tight">NV Ghi số #NV-4881</p>
+            <p className="text-xs font-bold text-slate-800 leading-tight">{userName}</p>
+            <p className="text-[11px] text-slate-500 font-medium leading-tight">{userSubtitle}</p>
           </div>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-50 transition-colors"
+              title="Đăng xuất"
+              aria-label="Đăng xuất"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
     </header>

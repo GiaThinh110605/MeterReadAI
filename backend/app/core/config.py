@@ -22,8 +22,11 @@ class Settings(BaseSettings):
         str(REPO_ROOT / "models_baseline/crnn/results/weights/best_model.pth")
     )
     
+    # Bảo mật JWT: SECRET_KEY phải đặt trong file .env khi triển khai thật (xem .env.example)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "waterflow-meterreadai-secret-key-2025")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:3000",

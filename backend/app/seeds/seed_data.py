@@ -5,6 +5,7 @@ from app.models.user import User, Employee
 from app.models.route import Route, RouteAssignment
 from app.models.meter import WaterMeter
 from app.models.tariff import Tariff, TariffTier
+from app.seeds.seed_auth_and_reports import seed_accounts_and_reports
 
 def seed_database():
     Base.metadata.create_all(bind=engine)
@@ -12,6 +13,7 @@ def seed_database():
     
     try:
         if db.query(User).filter(User.email == "nguyentuan@waterflow.vn").first():
+            seed_accounts_and_reports(db)
             return
 
         user = User(
@@ -216,6 +218,7 @@ def seed_database():
         ])
 
         db.commit()
+        seed_accounts_and_reports(db)
     except Exception:
         db.rollback()
         raise
