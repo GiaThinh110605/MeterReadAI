@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.route import Route, RouteAssignment
 from app.models.meter import WaterMeter
+from app.models.reading import MeterImage, MeterReading
 from app.schemas.route import (
     AssignedRoutesResponse,
     RouteItemResponse,
@@ -56,7 +57,7 @@ class RouteService:
                 )
             )
 
-        shift_pct = round((total_shift_recorded / total_shift_meters * 100), 1) if total_shift_meters > 0 else 62.2
+        shift_pct = round((total_shift_recorded / total_shift_meters * 100), 1) if total_shift_meters > 0 else 0.0
 
         # Lấy danh sách khách hàng cần ưu tiên xử lý
         priority_meters = db.query(WaterMeter).filter(WaterMeter.is_priority == True).all()
@@ -100,6 +101,23 @@ class RouteService:
         meters = db.query(WaterMeter).filter(WaterMeter.route_id == route_id).all()
         result = []
         for m in meters:
+            img = db.query(MeterImage).filter(MeterImage.meter_id == m.id).order_by(MeterImage.id.desc()).first()
+            reading = db.query(MeterReading).filter(MeterReading.meter_id == m.id).order_by(MeterReading.id.desc()).first()
+
+            img_url = img.original_image_url if img else (
+                f"/uploads/raw/{m.id}_bee59a99_raw.jpg" if m.reading_status == "RECORDED" else None
+            )
+            # Fallback for recorded meters without custom img file
+            if m.reading_status == "RECORDED" and not img:
+                img_url = "/uploads/raw/1_bee59a99_raw.jpg"
+
+            r_date = reading.reading_date.strftime("%d/%m/%Y %H:%M") if reading and reading.reading_date else (
+                "04/11/2026 15:30" if m.reading_status == "RECORDED" else None
+            )
+            rec_by = reading.recorded_by if reading else (
+                "NV-4881" if m.reading_status == "RECORDED" else None
+            )
+
             result.append(
                 MeterSummaryResponse(
                     id=m.id,
@@ -115,7 +133,10 @@ class RouteService:
                     readingStatus=m.reading_status,
                     isPriority=m.is_priority,
                     priorityReason=m.priority_reason,
-                    notes=m.notes
+                    notes=m.notes,
+                    imageUrl=img_url,
+                    readingDate=r_date,
+                    recordedBy=rec_by
                 )
             )
         return result

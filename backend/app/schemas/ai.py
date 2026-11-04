@@ -17,6 +17,8 @@ class VisualizationDetail(BaseModel):
     croppedImageUrl: str
     polygon: List[PolygonPoint] = Field(default_factory=list)
     bbox: List[int] = Field(default_factory=list, description="[x1, y1, x2, y2]")
+    imageWidth: Optional[int] = None
+    imageHeight: Optional[int] = None
 
 class AIPredictResponse(BaseModel):
     requestId: str

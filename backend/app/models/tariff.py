@@ -60,3 +60,15 @@ class InvoiceTierDetail(Base):
     amount: Mapped[float] = mapped_column(Float, nullable=False)
 
     invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="tier_details")
+
+class TariffHistory(Base):
+    __tablename__ = "tariff_histories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    decision_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    effective_date: Mapped[str] = mapped_column(String(50), nullable=False)
+    tier_summary: Mapped[str] = mapped_column(String(255), nullable=False)
+    changed_by: Mapped[str] = mapped_column(String(100), default="Ban Quản Trị")
+    note: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
