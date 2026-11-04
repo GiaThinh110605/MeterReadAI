@@ -1,0 +1,31 @@
+# tên của test
+name: CI
+
+# khi rơi vào sự kiện này sẽ kích hoạt job
+on: 
+  push: 
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+# job có thể chạy song song hoặc tuần tự
+jobs:
+  build:
+    # chạy trên mac, ubuntu, windows
+    runs-on: ubuntu-latest
+    
+    # viết các bước sẽ được chạy
+    steps:
+      # đầu tiên lấy source code về
+      - uses: actions/checkout@v4
+
+      - name: Install requirements
+        run: python3 -m pip install -r backend/requirements.txt 
+        # phải thêm -r 
+        # nếu không thì tưởng là backend/requirements.txt là package 
+        # nếu có thì nó cài các pakage có trong requirements.txt
+
+      - name: Run Python test
+        run: python3 -m pytest backend/tests -v
+      # chạy test 
+ 
