@@ -1,0 +1,9 @@
+
+path: /kaggle/input/datasets/mementomoriml/ocr-water-meters/ocr_water_meter
+
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: reading_region
