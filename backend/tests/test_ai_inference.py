@@ -32,11 +32,21 @@ def test_predict_rejects_nonexistent_meter(client: TestClient):
 
 def test_predict_valid_image(client: TestClient):
     """Kiểm tra xử lý ảnh hợp lệ: giải mã OpenCV -> YOLO11-seg -> CRNN -> trả bbox và confidence."""
-    sample_path = Path("data/DataAfterHandle/water_meters/images/id_1000_value_176_881.jpg")
-    if sample_path.exists():
-        with open(sample_path, "rb") as f:
-            img_bytes = io.BytesIO(f.read())
-    else:
+    test_dir = Path(__file__).parent
+    candidates = [
+        test_dir / "sample_meter.jpg",
+        Path("backend/uploads/meter_capture.jpg"),
+        Path("uploads/meter_capture.jpg"),
+        Path("data/DataAfterHandle/water_meters/images/id_1000_value_176_881.jpg"),
+    ]
+    img_bytes = None
+    for p in candidates:
+        if p.exists():
+            with open(p, "rb") as f:
+                img_bytes = io.BytesIO(f.read())
+            break
+
+    if img_bytes is None:
         test_img = np.ones((480, 640, 3), dtype=np.uint8) * 128
         cv2.putText(test_img, "01258", (200, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         _, buf = cv2.imencode(".jpg", test_img)
