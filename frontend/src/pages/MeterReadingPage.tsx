@@ -14,6 +14,7 @@ import { MeterItem, TariffCalculation } from '../types';
 import { CameraView } from '../components/reader/CameraView';
 import { AIRecognitionCard } from '../components/reader/AIRecognitionCard';
 import { TierPriceBreakdown } from '../components/reader/TierPriceBreakdown';
+import { RecordedMeterView } from '../components/reader/RecordedMeterView';
 import { AbnormalityModal } from '../components/common/AbnormalityModal';
 
 interface MeterReadingPageProps {
@@ -28,15 +29,22 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
   const [searchQuery, setSearchQuery] = useState('');
   
   // AI and Reading state
-  const [currentImage, setCurrentImage] = useState<string>('https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=800&q=80');
-  const [aiSequence, setAiSequence] = useState<string>('01258');
-  const [aiConfidence, setAiConfidence] = useState<number>(0.986);
-  const [confirmedIndex, setConfirmedIndex] = useState<number>(1258);
+  const [currentImage, setCurrentImage] = useState<string>('');
+  const [aiSequence, setAiSequence] = useState<string>('');
+  const [aiConfidence, setAiConfidence] = useState<number>(0);
+  const [confirmedIndex, setConfirmedIndex] = useState<number>(0);
   const [correctionReason, setCorrectionReason] = useState<string>('');
+  const [visualization, setVisualization] = useState<{
+    bbox?: number[];
+    polygon?: { x: number; y: number }[];
+    imageWidth?: number;
+    imageHeight?: number;
+  } | null>(null);
   
   // Status states
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isEditingRecorded, setIsEditingRecorded] = useState<boolean>(false);
   const [tariffData, setTariffData] = useState<TariffCalculation | null>(null);
   const [showAbnormalModal, setShowAbnormalModal] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -46,11 +54,35 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
       setMeters(data);
       if (data.length > 0) {
         setSelectedMeterId(data[0].id);
+        setIsEditingRecorded(false);
+        if (data[0].currentIndex !== null && data[0].currentIndex !== undefined) {
+          setConfirmedIndex(data[0].currentIndex);
+          setAiSequence(data[0].currentIndex.toString().padStart(5, '0'));
+          setCurrentImage(data[0].imageUrl || '');
+        } else {
+          setConfirmedIndex(data[0].previousIndex);
+          setAiSequence('');
+          setCurrentImage('');
+        }
       }
     });
   }, [routeId]);
 
-  const selectedMeter = meters.find((m) => m.id === selectedMeterId) || meters[0];
+  const fallbackMeter: MeterItem = {
+    id: 1,
+    meterCode: 'DH001245',
+    customerName: 'Nguyễn Văn An',
+    customerPhone: '0912.345.678',
+    address: '121 Nguyễn Trãi, Phường Bến Nghé, Quận 1',
+    meterSize: '15mm',
+    meterType: 'HỘ GIA ĐÌNH SINH HOẠT',
+    standardTierLimit: 20,
+    previousIndex: 1240,
+    readingStatus: 'RECORDED',
+    isPriority: false
+  };
+
+  const selectedMeter = (meters.length > 0 ? (meters.find((m) => m.id === selectedMeterId) || meters[0]) : fallbackMeter);
 
   // Recalculate bill whenever index changes
   useEffect(() => {
@@ -62,34 +94,41 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
 
   const handleSelectMeter = (meter: MeterItem) => {
     setSelectedMeterId(meter.id);
-    if (meter.currentIndex) {
+    setIsEditingRecorded(false);
+    if (meter.currentIndex !== null && meter.currentIndex !== undefined) {
       setConfirmedIndex(meter.currentIndex);
       setAiSequence(meter.currentIndex.toString().padStart(5, '0'));
+      setCurrentImage(meter.imageUrl || '');
     } else {
-      // Default sample prediction for unread meters
-      setConfirmedIndex(meter.previousIndex + 18);
-      setAiSequence((meter.previousIndex + 18).toString().padStart(5, '0'));
+      setConfirmedIndex(meter.previousIndex);
+      setAiSequence('');
+      setCurrentImage('');
     }
+    setAiConfidence(0);
+    setVisualization(null);
     setCorrectionReason('');
   };
 
   const handleScanAI = async () => {
+    if (!currentImage) return;
     setIsScanning(true);
     try {
-      // Create sample blob from current image
       const res = await fetch(currentImage);
       const blob = await res.blob();
-      const aiRes = await api.predictAI(selectedMeter.id, blob);
+      const aiRes = await api.predictAI(selectedMeter?.id, blob);
       setAiSequence(aiRes.prediction.predictedSequence);
-      setConfirmedIndex(aiRes.prediction.numericalValue);
+      if (aiRes.prediction.confidence > 0 && aiRes.prediction.predictedSequence) {
+        setConfirmedIndex(aiRes.prediction.numericalValue ?? 0);
+      }
       setAiConfidence(aiRes.prediction.confidence);
-      setToastMessage('Đã quét và phân tích xong chỉ số qua YOLO11-seg + CRNN!');
-    } catch {
-      // Keep optimistic mock result on network fallback
-      setAiSequence('01258');
-      setConfirmedIndex(1258);
-      setAiConfidence(0.986);
-      setToastMessage('Đã cập nhật chỉ số nhận diện!');
+      setVisualization(aiRes.visualization);
+      if (aiRes.prediction.confidence > 0) {
+        setToastMessage(`Đã nhận diện: ${aiRes.prediction.predictedSequence} (${aiRes.prediction.numericalValue} m³)`);
+      } else {
+        setToastMessage('Không phát hiện được vùng số rõ ràng. Vui lòng căn chỉnh lại góc chụp hoặc nhập tay!');
+      }
+    } catch (err: any) {
+      setToastMessage(err.message || 'Không thể nhận diện ảnh đồng hồ. Vui lòng thử lại!');
     } finally {
       setIsScanning(false);
       setTimeout(() => setToastMessage(null), 3000);
@@ -101,13 +140,21 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
     const localUrl = URL.createObjectURL(file);
     setCurrentImage(localUrl);
     try {
-      const aiRes = await api.predictAI(selectedMeter.id, file);
+      const aiRes = await api.predictAI(selectedMeter?.id, file);
       setAiSequence(aiRes.prediction.predictedSequence);
-      setConfirmedIndex(aiRes.prediction.numericalValue);
+      if (aiRes.prediction.confidence > 0 && aiRes.prediction.predictedSequence) {
+        setConfirmedIndex(aiRes.prediction.numericalValue ?? 0);
+      }
       setAiConfidence(aiRes.prediction.confidence);
-      setToastMessage('Nhận diện ảnh mới thành công!');
+      setVisualization(aiRes.visualization);
+
+      if (aiRes.prediction.confidence > 0) {
+        setToastMessage(`Nhận diện thành công: ${aiRes.prediction.predictedSequence} (${aiRes.prediction.numericalValue} m³)`);
+      } else {
+        setToastMessage('Chưa phát hiện vùng số hoặc độ tin cậy thấp. Có thể chỉnh sửa tay.');
+      }
     } catch (err: any) {
-      alert(err.message || 'Lỗi xử lý ảnh');
+      setToastMessage(err.message || 'Lỗi xử lý ảnh');
     } finally {
       setIsScanning(false);
       setTimeout(() => setToastMessage(null), 3000);
@@ -134,10 +181,11 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
       setMeters((prev) =>
         prev.map((m) =>
           m.id === selectedMeter.id
-            ? { ...m, currentIndex: confirmedIndex, readingStatus: 'RECORDED' }
+            ? { ...m, currentIndex: confirmedIndex, readingStatus: 'RECORDED', imageUrl: currentImage || m.imageUrl }
             : m
         )
       );
+      setIsEditingRecorded(false);
 
       setToastMessage(`Đã gửi thành công chỉ số ${confirmedIndex} m³ cho khách hàng ${selectedMeter.customerName}!`);
 
@@ -184,6 +232,13 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
   });
 
   const nextPendingMeter = meters.find((m) => m.id !== selectedMeter?.id && m.readingStatus === 'PENDING');
+
+  const totalMetersCount = meters.length;
+  const recordedMetersCount = meters.filter((m) => m.readingStatus === 'RECORDED').length;
+  const pendingMetersCount = meters.filter(
+    (m) => m.readingStatus === 'PENDING' || m.readingStatus === 'LOCKED' || m.readingStatus === 'ABNORMAL'
+  ).length;
+  const progressPercent = totalMetersCount > 0 ? Math.round((recordedMetersCount / totalMetersCount) * 100) : 0;
 
   return (
     <div className="p-4 lg:p-6 max-w-[1600px] mx-auto space-y-4">
@@ -238,14 +293,14 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 TIẾN ĐỘ KỲ 04/2025
               </span>
-              <span className="font-extrabold text-sky-900">72%</span>
+              <span className="font-extrabold text-sky-900">{progressPercent}%</span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-black text-sky-950">18 <span className="text-xs font-bold text-slate-400">/ 25 hộ</span></span>
+              <span className="text-2xl font-black text-sky-950">{recordedMetersCount} <span className="text-xs font-bold text-slate-400">/ {totalMetersCount} hộ</span></span>
               <span className="text-[11px] font-semibold text-slate-500">Hoàn tất tuyến</span>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-2 flex">
-              <div className="bg-sky-600" style={{ width: '72%' }} />
+              <div className="bg-sky-600" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
 
@@ -269,7 +324,7 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
                 filterTab === 'ALL' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Tất cả ({meters.length})
+              Tất cả ({totalMetersCount})
             </button>
             <button
               onClick={() => setFilterTab('PENDING')}
@@ -277,7 +332,7 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
                 filterTab === 'PENDING' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Chưa ghi (7)
+              Chưa ghi ({pendingMetersCount})
             </button>
             <button
               onClick={() => setFilterTab('RECORDED')}
@@ -285,7 +340,7 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
                 filterTab === 'RECORDED' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Đã ghi (17)
+              Đã ghi ({recordedMetersCount})
             </button>
           </div>
 
@@ -350,76 +405,118 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
           </div>
 
           <div className="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-400 font-medium">
-            7 điểm đo còn lại trong ca • <strong>Tự động chuyển tiếp khi lưu</strong>
+            {pendingMetersCount} điểm đo còn lại trong ca • <strong>Tự động chuyển tiếp khi lưu</strong>
           </div>
         </div>
 
-        {/* Center Column: Camera viewfinder & Tier breakdown (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
-          {/* Customer summary card */}
-          {selectedMeter && (
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-800 font-extrabold text-base flex items-center justify-center shrink-0">
-                {selectedMeter.customerName.slice(0, 2).toUpperCase()}
-              </div>
+        {/* Right Area: Conditionally render Recorded View vs Recording Flow */}
+        {selectedMeter && selectedMeter.readingStatus === 'RECORDED' && !isEditingRecorded ? (
+          <div className="lg:col-span-9">
+            <RecordedMeterView
+              meter={selectedMeter}
+              imageSrc={currentImage}
+              confirmedIndex={confirmedIndex}
+              aiSequence={aiSequence}
+              tariffData={tariffData}
+              onEditAgain={() => setIsEditingRecorded(true)}
+              onNextPending={nextPendingMeter ? () => handleSelectMeter(nextPendingMeter) : undefined}
+              nextCustomerName={
+                nextPendingMeter
+                  ? `${nextPendingMeter.customerName} (${nextPendingMeter.address})`
+                  : undefined
+              }
+            />
+          </div>
+        ) : (
+          <>
+            {/* Center Column: Camera viewfinder & Tier breakdown (5 cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              {/* Editing recorded meter notice banner */}
+              {isEditingRecorded && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs font-semibold text-amber-900 animate-in fade-in">
+                  <span>Đang ở chế độ hiệu chỉnh chỉ số cho đồng hồ đã ghi nhận.</span>
+                  <button
+                    onClick={() => setIsEditingRecorded(false)}
+                    className="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded-lg text-[11px] font-bold cursor-pointer"
+                  >
+                    Hủy và quay lại
+                  </button>
+                </div>
+              )}
 
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-extrabold text-slate-900">{selectedMeter.customerName}</h3>
-                    <span className="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-100 text-[10px] font-bold rounded">
-                      {selectedMeter.meterType}
-                    </span>
+              {/* Customer summary card */}
+              {selectedMeter && (
+                <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-800 font-extrabold text-base flex items-center justify-center shrink-0">
+                    {selectedMeter.customerName.slice(0, 2).toUpperCase()}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-extrabold text-slate-900">{selectedMeter.customerName}</h3>
+                        <span className="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-100 text-[10px] font-bold rounded">
+                          {selectedMeter.meterType}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-500 mt-0.5">{selectedMeter.address}</p>
+                    <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
+                      <span># <strong>{selectedMeter.meterCode}</strong></span>
+                      <span>Cỡ ĐH: <strong>{selectedMeter.meterSize}</strong></span>
+                      <span>Hạn mức: <strong>{selectedMeter.standardTierLimit} m³ (Bậc 1-2)</strong></span>
+                    </div>
                   </div>
                 </div>
+              )}
 
-                <p className="text-xs text-slate-500 mt-0.5">{selectedMeter.address}</p>
-                <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
-                  <span># <strong>{selectedMeter.meterCode}</strong></span>
-                  <span>Cỡ ĐH: <strong>{selectedMeter.meterSize}</strong></span>
-                  <span>Hạn mức: <strong>{selectedMeter.standardTierLimit} m³ (Bậc 1-2)</strong></span>
-                </div>
-              </div>
+              {/* Camera Viewfinder Component */}
+              <CameraView
+                imageSrc={currentImage}
+                confidence={aiConfidence}
+                detectedSequence={aiSequence}
+                isScanning={isScanning}
+                visualization={visualization}
+                onRetake={() => {
+                  setCurrentImage('');
+                  setVisualization(null);
+                  setAiConfidence(0);
+                  setAiSequence('');
+                }}
+                onScanAI={handleScanAI}
+                onReportAbnormal={() => setShowAbnormalModal(true)}
+                onUploadCustomImage={handleUploadImage}
+              />
+
+              {/* Progressive Tier Price Breakdown Component */}
+              {selectedMeter && (
+                <TierPriceBreakdown
+                  tariffData={tariffData}
+                  consumption={Math.max(0, confirmedIndex - selectedMeter.previousIndex)}
+                />
+              )}
             </div>
-          )}
 
-          {/* Camera Viewfinder Component */}
-          <CameraView
-            imageSrc={currentImage}
-            confidence={aiConfidence}
-            isScanning={isScanning}
-            onRetake={() => setCurrentImage('https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=800&q=80')}
-            onScanAI={handleScanAI}
-            onReportAbnormal={() => setShowAbnormalModal(true)}
-            onUploadCustomImage={handleUploadImage}
-          />
-
-          {/* Progressive Tier Price Breakdown Component */}
-          {selectedMeter && (
-            <TierPriceBreakdown
-              tariffData={tariffData}
-              consumption={Math.max(0, confirmedIndex - selectedMeter.previousIndex)}
-            />
-          )}
-        </div>
-
-        {/* Right Column: AI Result & Submit reading (4 cols) */}
-        <div className="lg:col-span-4">
-          {selectedMeter && (
-            <AIRecognitionCard
-              previousIndex={selectedMeter.previousIndex}
-              aiPredictedSequence={aiSequence}
-              aiConfidence={aiConfidence}
-              confirmedIndex={confirmedIndex}
-              onChangeConfirmedIndex={setConfirmedIndex}
-              correctionReason={correctionReason}
-              onChangeCorrectionReason={setCorrectionReason}
-              onSubmit={handleSubmitReading}
-              isSubmitting={isSubmitting}
-              nextCustomerName={nextPendingMeter ? `${nextPendingMeter.customerName} (${nextPendingMeter.address})` : 'Đã hoàn tất toàn tuyến!'}
-            />
-          )}
-        </div>
+            {/* Right Column: AI Result & Submit reading (4 cols) */}
+            <div className="lg:col-span-4">
+              {selectedMeter && (
+                <AIRecognitionCard
+                  previousIndex={selectedMeter.previousIndex}
+                  aiPredictedSequence={aiSequence}
+                  aiConfidence={aiConfidence}
+                  confirmedIndex={confirmedIndex}
+                  onChangeConfirmedIndex={setConfirmedIndex}
+                  correctionReason={correctionReason}
+                  onChangeCorrectionReason={setCorrectionReason}
+                  onSubmit={handleSubmitReading}
+                  isSubmitting={isSubmitting}
+                  nextCustomerName={nextPendingMeter ? `${nextPendingMeter.customerName} (${nextPendingMeter.address})` : 'Đã hoàn tất toàn tuyến!'}
+                />
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Abnormality Modal */}

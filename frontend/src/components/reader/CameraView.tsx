@@ -1,10 +1,17 @@
-import React, { useRef, useState } from 'react';
-import { Camera, RefreshCw, AlertTriangle, Scan, UploadCloud } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Camera, AlertTriangle, Scan, UploadCloud } from 'lucide-react';
 
 interface CameraViewProps {
   imageSrc: string;
   confidence: number;
+  detectedSequence?: string;
   isScanning: boolean;
+  visualization?: {
+    bbox?: number[];
+    polygon?: { x: number; y: number }[];
+    imageWidth?: number;
+    imageHeight?: number;
+  } | null;
   onRetake: () => void;
   onScanAI: () => void;
   onReportAbnormal: () => void;
@@ -14,8 +21,9 @@ interface CameraViewProps {
 export const CameraView: React.FC<CameraViewProps> = ({
   imageSrc,
   confidence,
+  detectedSequence,
   isScanning,
-  onRetake,
+  visualization,
   onScanAI,
   onReportAbnormal,
   onUploadCustomImage
@@ -24,14 +32,24 @@ export const CameraView: React.FC<CameraViewProps> = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      onUploadCustomImage(e.target.files[0]);
+      const file = e.target.files[0];
+      e.target.value = '';
+      onUploadCustomImage(file);
     }
   };
+
+  const bbox = visualization?.bbox;
+  const polygon = visualization?.polygon;
+  const hasDetection =
+    confidence > 0 &&
+    Boolean(visualization && bbox && bbox.length === 4);
+
+  const imgW = visualization?.imageWidth || 1000;
+  const imgH = visualization?.imageHeight || 1000;
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm flex flex-col justify-between">
       <div>
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-slate-700" />
@@ -42,46 +60,99 @@ export const CameraView: React.FC<CameraViewProps> = ({
           </span>
         </div>
 
-        {/* Viewfinder Frame */}
-        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-900 shadow-inner flex items-center justify-center border border-slate-200">
-          <img
-            src={imageSrc}
-            alt="Mặt số đồng hồ nước"
-            className="w-full h-full object-cover"
-          />
+        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950 shadow-inner flex items-center justify-center border border-slate-200">
+          {imageSrc ? (
+            <>
+              <img
+                src={imageSrc}
+                alt="Mặt số đồng hồ nước"
+                className="w-full h-full object-contain"
+              />
 
-          {/* AI Bounding Box Overlay */}
-          <div className="absolute inset-x-[20%] inset-y-[32%] border-2 border-dashed border-sky-400 bg-sky-500/10 rounded-lg pointer-events-none flex flex-col justify-between p-2">
-            <div className="flex items-center justify-between">
-              <span className="bg-sky-600/90 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow">
-                OCR DIAL BOX #01
-              </span>
-              <span className="bg-emerald-600/90 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow">
-                {(confidence * 100).toFixed(1)}% CONF
-              </span>
-            </div>
+              {hasDetection && bbox && bbox.length === 4 && (
+                <>
+                  <svg
+                    viewBox={`0 0 ${imgW} ${imgH}`}
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    preserveAspectRatio="xMidYMid meet"
+                  >
+                    {polygon && polygon.length >= 3 ? (
+                      <polygon
+                        points={polygon.map((p) => `${p.x},${p.y}`).join(' ')}
+                        fill="rgba(14, 165, 233, 0.18)"
+                        stroke="#0284c7"
+                        strokeWidth={Math.max(2, Math.round(imgW * 0.004))}
+                        strokeDasharray="8 4"
+                      />
+                    ) : (
+                      <rect
+                        x={bbox[0]}
+                        y={bbox[1]}
+                        width={bbox[2] - bbox[0]}
+                        height={bbox[3] - bbox[1]}
+                        fill="rgba(14, 165, 233, 0.18)"
+                        stroke="#0284c7"
+                        strokeWidth={Math.max(2, Math.round(imgW * 0.004))}
+                        rx={6}
+                      />
+                    )}
+                  </svg>
 
-            {isScanning && (
-              <div className="absolute inset-0 bg-sky-400/20 flex items-center justify-center">
-                <div className="h-0.5 w-full bg-sky-300 shadow-[0_0_8px_#38bdf8] animate-pulse"></div>
+                  {detectedSequence && (
+                    <div
+                      className="absolute pointer-events-none flex items-center"
+                      style={{
+                        left: `${Math.max(4, Math.min(80, (bbox[0] / imgW) * 100))}%`,
+                        top: `${Math.max(4, Math.min(85, (bbox[1] / imgH) * 100 - 6))}%`,
+                      }}
+                    >
+                      <span className="bg-sky-950/90 border border-sky-400 backdrop-blur-sm text-sky-200 font-mono text-xs font-black px-2 py-0.5 rounded-lg shadow-lg tracking-wider">
+                        {detectedSequence}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {isScanning && (
+                <div className="absolute inset-0 bg-sky-500/20 backdrop-blur-[1px] flex flex-col items-center justify-center pointer-events-none">
+                  <div className="h-1 w-3/4 bg-sky-300 shadow-[0_0_12px_#38bdf8] rounded-full animate-pulse mb-3"></div>
+                  <span className="text-white text-xs font-bold bg-slate-900/80 px-3 py-1 rounded-full">
+                    Đang phân tích hình ảnh...
+                  </span>
+                </div>
+              )}
+
+              {!isScanning && confidence === 0 && (
+                <div className="absolute top-3 inset-x-3 bg-amber-500/95 backdrop-blur-sm text-white text-xs font-semibold px-3 py-2 rounded-xl text-center shadow-lg pointer-events-none">
+                  Không tìm thấy mặt số hoặc độ tin cậy thấp. Vui lòng căn góc chụp hoặc nhập tay.
+                </div>
+              )}
+
+              <div className="absolute bottom-2.5 inset-x-3 flex items-center justify-between text-[10px] font-semibold text-white/90 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg pointer-events-none">
+                <span>{new Date().toLocaleDateString('vi-VN')} {new Date().toLocaleTimeString('vi-VN')}</span>
+                <span>10.7769° N, 106.7009° E</span>
               </div>
-            )}
-          </div>
-
-          {/* HUD Metadata Overlay */}
-          <div className="absolute bottom-2.5 inset-x-3 flex items-center justify-between text-[10px] font-semibold text-white/90 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg">
-            <span>14/04/2025 09:42:18</span>
-            <span>10.7769° N, 106.7009° E</span>
-          </div>
+            </>
+          ) : (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:bg-slate-900/80 transition-colors w-full h-full"
+            >
+              <Camera className="w-12 h-12 text-slate-500 mb-2 stroke-1" />
+              <p className="text-sm font-semibold text-slate-300">Nhấn để chụp hoặc tải ảnh đồng hồ</p>
+              <p className="text-xs text-slate-500 mt-1">YOLO11-seg sẽ phân tích mặt số tự động</p>
+            </div>
+          )}
         </div>
 
-        {/* Action Buttons row 1 */}
         <div className="grid grid-cols-2 gap-3 mt-4">
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept="image/jpeg,image/png"
+            accept="image/*"
+            capture="environment"
             className="hidden"
           />
           <button
@@ -94,7 +165,7 @@ export const CameraView: React.FC<CameraViewProps> = ({
 
           <button
             onClick={onScanAI}
-            disabled={isScanning}
+            disabled={isScanning || !imageSrc}
             className="py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
           >
             <Scan className={`w-4 h-4 text-sky-600 ${isScanning ? 'animate-spin' : ''}`} />
@@ -102,7 +173,6 @@ export const CameraView: React.FC<CameraViewProps> = ({
           </button>
         </div>
 
-        {/* Action Button: Báo bất thường */}
         <button
           onClick={onReportAbnormal}
           className="w-full mt-3 py-2 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors"

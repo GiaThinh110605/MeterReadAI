@@ -24,7 +24,7 @@ export const AIRecognitionCard: React.FC<AIRecognitionCardProps> = ({
   onChangeCorrectionReason,
   onSubmit,
   isSubmitting,
-  nextCustomerName = 'Trần Văn Bình (125 Nguyễn Trãi)'
+  nextCustomerName
 }) => {
   const consumption = Math.round((confirmedIndex - previousIndex) * 100) / 100;
   const isModified = confirmedIndex !== Number(aiPredictedSequence);
@@ -63,10 +63,17 @@ export const AIRecognitionCard: React.FC<AIRecognitionCardProps> = ({
             <Target className="w-4 h-4 text-sky-600" />
             <span>KẾT QUẢ AI NHẬN DIỆN</span>
           </div>
-          <span className="px-2.5 py-1 bg-emerald-700 text-white text-[10px] font-extrabold rounded-full flex items-center gap-1 shadow-sm">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>{(aiConfidence * 100).toFixed(1)}% độ tin cậy</span>
-          </span>
+          {aiConfidence > 0 ? (
+            <span className="px-2.5 py-1 bg-emerald-700 text-white text-[10px] font-extrabold rounded-full flex items-center gap-1 shadow-sm">
+              <CheckCircle2 className="w-3 h-3" />
+              <span>Đã nhận diện</span>
+            </span>
+          ) : (
+            <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-full flex items-center gap-1 shadow-sm">
+              <AlertOctagon className="w-3 h-3 text-amber-600" />
+              <span>Chưa nhận diện</span>
+            </span>
+          )}
         </div>
 
         {/* Big numbers */}
@@ -84,6 +91,25 @@ export const AIRecognitionCard: React.FC<AIRecognitionCardProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Recognized Sequence with leading zeros preserved */}
+        {aiPredictedSequence ? (
+          <div className="mt-3 p-2.5 bg-sky-100/70 border border-sky-200/90 rounded-xl flex items-center justify-between">
+            <span className="text-[11px] font-bold text-sky-900">Số nhận diện:</span>
+            <div className="flex items-center gap-1 font-mono text-base font-black text-sky-950 bg-white px-3 py-1 rounded-lg border border-sky-200 shadow-sm">
+              {aiPredictedSequence.split('').map((char, idx) => (
+                <span
+                  key={idx}
+                  className={`px-1 py-0.5 rounded ${
+                    char === '0' ? 'text-slate-400 bg-slate-50' : 'text-sky-900 bg-sky-50 font-black'
+                  }`}
+                >
+                  {char}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {/* Manual Edit Input Box */}
         <div className="mt-4 pt-4 border-t border-sky-200/60">
@@ -179,9 +205,11 @@ export const AIRecognitionCard: React.FC<AIRecognitionCardProps> = ({
         </button>
       </div>
 
-      <div className="p-3 bg-slate-100/70 rounded-xl text-center text-xs text-slate-500 font-medium">
-        Sau khi gửi, hệ thống tự động chuyển sang: <strong className="text-slate-700">{nextCustomerName}</strong>
-      </div>
+      {nextCustomerName && (
+        <div className="p-3 bg-slate-100/70 rounded-xl text-center text-xs text-slate-500 font-medium">
+          Sau khi gửi, hệ thống tự động chuyển sang: <strong className="text-slate-700">{nextCustomerName}</strong>
+        </div>
+      )}
     </div>
   );
 };

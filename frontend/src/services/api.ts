@@ -1,167 +1,92 @@
-import { AssignedRoutesData, MeterItem, AIPredictionResponse, TariffCalculation } from '../types';
+import {
+  AssignedRoutesData,
+  MeterItem,
+  AIPredictionResponse,
+  TariffCalculation,
+  LoginFormData,
+  RegisterFormData,
+  UserAuthSession,
+  CustomerOverviewData,
+  CustomerInvoiceItem,
+  CustomerComplaintItem,
+  AdminOverviewStats,
+  AdminRoutesSummary,
+  AdminRouteItem,
+  AdminEmployeesSummary,
+  AdminEmployeeItem,
+  AdminInvoicesSummary,
+  AdminInvoiceItem,
+  CreateInvoicePayload,
+  RouteAssignPayload,
+  AdminPricingData,
+  TariffHistoryItem,
+  CreateTariffPayload,
+  AdminReportsData,
+  ComplaintListItem,
+  ComplaintAuditDetail,
+  ComplaintStatsSummary,
+} from '../types';
+
 
 const API_BASE = '/api/v1';
 
 export const api = {
-  async getAssignedRoutes(): Promise<AssignedRoutesData> {
-    try {
-      const res = await fetch(`${API_BASE}/reader/assigned-routes`);
-      if (!res.ok) throw new Error('Failed to fetch assigned routes');
-      return await res.json();
-    } catch (err) {
-      console.warn('API getAssignedRoutes error, using fallback:', err);
-      return {
-        shiftProgressPercent: 62.2,
-        totalMetersInShift: 45,
-        recordedMetersInShift: 28,
-        pendingMetersInShift: 15,
-        abnormalMetersInShift: 2,
-        startTime: '07:30 Sáng',
-        estimatedEndTime: '16:45 Chiều',
-        routes: [
-          {
-            id: 1,
-            routeCode: 'A01',
-            routeName: 'Tuyến A01 – Phường Bến Nghé, Quận 1',
-            description: 'Trục Nguyễn Du - Nguyễn Trãi',
-            ward: 'Phường Bến Nghé',
-            district: 'Quận 1',
-            totalMeters: 25,
-            recordedMeters: 18,
-            pendingMeters: 6,
-            abnormalMeters: 1,
-            percentComplete: 72.0,
-            status: 'IN_PROGRESS',
-            priority: 1,
-            lastUpdated: '10 phút trước'
-          },
-          {
-            id: 2,
-            routeCode: 'A02',
-            routeName: 'Tuyến A02 – Phường Đa Kao, Quận 1',
-            description: 'Trục Đinh Tiên Hoàng - Hoàng Sa',
-            ward: 'Phường Đa Kao',
-            district: 'Quận 1',
-            totalMeters: 20,
-            recordedMeters: 10,
-            pendingMeters: 9,
-            abnormalMeters: 1,
-            percentComplete: 50.0,
-            status: 'PAUSED',
-            priority: 2,
-            lastUpdated: '10 phút trước'
-          }
-        ],
-        priorityAlerts: [
-          {
-            id: 6,
-            meterCode: 'DH-BN-0941',
-            customerName: 'Lê Hoàng Nam (Nhà sách Ánh Dương)',
-            address: '42 Nguyễn Du, P. Bến Nghé (Tuyến A01)',
-            phone: '0918.234.xxx',
-            issueType: 'Khóa cổng hẹn ca chiều',
-            issueDescription: 'Chủ nhà hẹn sau 15:30',
-            routeCode: 'A01',
-            actionPrompt: 'Ghi lại ngay'
-          },
-          {
-            id: 7,
-            meterCode: 'DH-DK-0112',
-            customerName: 'Công ty TNHH May Mặc Sài Gòn',
-            address: '108 Hoàng Sa, P. Đa Kao (Tuyến A02)',
-            phone: '028.3822.xxxx',
-            issueType: 'Tiêu thụ tăng vọt (+280%)',
-            issueDescription: 'Đọc kỳ này: 342 m³ (Trung bình: 90 m³). Cần kiểm tra rò rỉ sau đồng hồ.',
-            routeCode: 'A02',
-            actionPrompt: 'Chụp xác minh'
-          }
-        ]
-      };
+  async login(formData: LoginFormData): Promise<UserAuthSession> {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Đăng nhập không thành công');
     }
+    return await res.json();
+  },
+
+  async register(formData: RegisterFormData): Promise<UserAuthSession> {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Đăng ký tài khoản không thành công');
+    }
+    return await res.json();
+  },
+
+  async getAssignedRoutes(): Promise<AssignedRoutesData> {
+    const res = await fetch(`${API_BASE}/reader/assigned-routes`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải danh sách tuyến đọc');
+    }
+    return await res.json();
   },
 
   async getRouteMeters(routeId: number): Promise<MeterItem[]> {
-    try {
-      const res = await fetch(`${API_BASE}/reader/routes/${routeId}/meters`);
-      if (!res.ok) throw new Error('Failed to fetch meters');
-      return await res.json();
-    } catch (err) {
-      console.warn('API getRouteMeters error, using fallback:', err);
-      return [
-        {
-          id: 1,
-          meterCode: 'DH001245',
-          customerName: 'Nguyễn Văn An',
-          address: '123 Nguyễn Trãi, P. Bến Nghé, Quận 1',
-          meterSize: '15mm',
-          meterType: 'HỘ GIA ĐÌNH SINH HOẠT',
-          standardTierLimit: 20.0,
-          previousIndex: 1240.0,
-          readingStatus: 'PENDING',
-          isPriority: false
-        },
-        {
-          id: 2,
-          meterCode: 'DH001246',
-          customerName: 'Trần Văn Bình',
-          address: '125 Nguyễn Trãi',
-          meterSize: '15mm',
-          meterType: 'HỘ GIA ĐÌNH SINH HOẠT',
-          standardTierLimit: 20.0,
-          previousIndex: 1240.0,
-          currentIndex: 1258.0,
-          readingStatus: 'RECORDED',
-          isPriority: false
-        },
-        {
-          id: 3,
-          meterCode: 'DH001247',
-          customerName: 'Lê Văn Nam',
-          address: '127 Nguyễn Trãi',
-          meterSize: '15mm',
-          meterType: 'HỘ GIA ĐÌNH SINH HOẠT',
-          standardTierLimit: 20.0,
-          previousIndex: 890.0,
-          readingStatus: 'LOCKED',
-          isPriority: false,
-          notes: 'Báo ngày 14/04'
-        },
-        {
-          id: 4,
-          meterCode: 'DH001248',
-          customerName: 'Hoàng Thị Mai',
-          address: '129 Nguyễn Trãi',
-          meterSize: '15mm',
-          meterType: 'HỘ GIA ĐÌNH SINH HOẠT',
-          standardTierLimit: 20.0,
-          previousIndex: 84.0,
-          readingStatus: 'PENDING',
-          isPriority: false
-        },
-        {
-          id: 5,
-          meterCode: 'DH001249',
-          customerName: 'Phạm Đức Thắng',
-          address: '131 Nguyễn Trãi',
-          meterSize: '15mm',
-          meterType: 'HỘ GIA ĐÌNH SINH HOẠT',
-          standardTierLimit: 20.0,
-          previousIndex: 312.0,
-          readingStatus: 'PENDING',
-          isPriority: false
-        }
-      ];
+    const res = await fetch(`${API_BASE}/reader/routes/${routeId}/meters`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải danh sách đồng hồ');
     }
+    return await res.json();
   },
 
-  async predictAI(meterId: number, file: Blob): Promise<AIPredictionResponse> {
+  async predictAI(meterId?: number, file?: Blob): Promise<AIPredictionResponse> {
     const formData = new FormData();
-    formData.append('file', file, 'meter_capture.jpg');
-    formData.append('meterId', meterId.toString());
+    if (file) {
+      formData.append('file', file, 'meter_capture.jpg');
+    }
+    if (meterId !== undefined && meterId !== null) {
+      formData.append('meterId', meterId.toString());
+    }
 
     const res = await fetch(`${API_BASE}/ai/predict`, {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     if (!res.ok) {
@@ -184,7 +109,7 @@ export const api = {
     const res = await fetch(`${API_BASE}/readings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
 
     if (!res.ok) {
@@ -203,7 +128,7 @@ export const api = {
     const res = await fetch(`${API_BASE}/readings/abnormalities`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
 
     if (!res.ok) {
@@ -214,34 +139,355 @@ export const api = {
   },
 
   async calculateTariff(consumption: number): Promise<TariffCalculation> {
-    try {
-      const res = await fetch(`${API_BASE}/tariffs/calculate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ consumption })
-      });
-      if (!res.ok) throw new Error('Failed to calculate tariff');
-      return await res.json();
-    } catch {
-      // Local calculation fallback
-      const vol1 = Math.min(10, Math.max(0, consumption));
-      const vol2 = Math.min(10, Math.max(0, consumption - 10));
-      const vol3 = Math.max(0, consumption - 20);
-      const subtotal = vol1 * 6700 + vol2 * 7000 + vol3 * 8500;
-      const env = Math.round(subtotal * 0.1);
-      const vat = Math.round((subtotal + env) * 0.05);
-      return {
-        consumption,
-        waterAmount: subtotal,
-        envFee: env,
-        vatAmount: vat,
-        totalAmount: subtotal + env + vat,
-        tiers: [
-          { tierOrder: 1, tierName: 'Bậc 1 (≤10 m³)', volume: vol1, unitPrice: 6700, amount: vol1 * 6700 },
-          { tierOrder: 2, tierName: 'Bậc 2 (10-20 m³)', volume: vol2, unitPrice: 7000, amount: vol2 * 7000 },
-          { tierOrder: 3, tierName: 'Bậc 3 (>20 m³)', volume: vol3, unitPrice: 8500, amount: vol3 * 8500 }
-        ]
-      };
+    const res = await fetch(`${API_BASE}/tariffs/calculate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consumption }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tính tiền nước');
     }
-  }
+    return await res.json();
+  },
+
+  async getCustomerOverview(): Promise<CustomerOverviewData> {
+    const res = await fetch(`${API_BASE}/customer/overview`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải tổng quan khách hàng');
+    }
+    return await res.json();
+  },
+
+  async getCustomerInvoices(): Promise<CustomerInvoiceItem[]> {
+    const res = await fetch(`${API_BASE}/customer/invoices`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải danh sách hóa đơn');
+    }
+    return await res.json();
+  },
+
+  async payInvoice(invoiceId: number) {
+    const res = await fetch(`${API_BASE}/customer/invoices/${invoiceId}/pay`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Thanh toán thất bại');
+    }
+    return await res.json();
+  },
+
+  async getCustomerComplaints(): Promise<CustomerComplaintItem[]> {
+    const res = await fetch(`${API_BASE}/customer/complaints`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải danh sách khiếu nại');
+    }
+    return await res.json();
+  },
+
+  async submitComplaint(data: {
+    ticketType: string;
+    invoiceCode?: string;
+    content: string;
+    imageUrl?: string;
+  }): Promise<CustomerComplaintItem> {
+    const res = await fetch(`${API_BASE}/customer/complaints`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể gửi khiếu nại');
+    }
+    return await res.json();
+  },
+
+  async getAdminOverview(): Promise<AdminOverviewStats> {
+    const res = await fetch(`${API_BASE}/admin/overview`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải tổng quan quản trị');
+    }
+    return await res.json();
+  },
+
+  async getAdminRoutes(): Promise<AdminRoutesSummary> {
+    const res = await fetch(`${API_BASE}/admin/routes`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải danh sách tuyến');
+    }
+    return await res.json();
+  },
+
+  async assignAdminRoute(payload: RouteAssignPayload) {
+    const res = await fetch(`${API_BASE}/admin/routes/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Phân công tuyến không thành công');
+    }
+    return await res.json();
+  },
+
+  async createAdminRoute(data: {
+    route_name: string;
+    route_code?: string;
+    ward: string;
+    district?: string;
+    description?: string;
+    priority_order?: number;
+  }): Promise<AdminRouteItem> {
+    const res = await fetch(`${API_BASE}/admin/routes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Tạo tuyến đường thất bại');
+    }
+    return await res.json();
+  },
+
+  async deleteAdminRoute(routeId: number): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE}/admin/routes/${routeId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Xóa tuyến đường thất bại');
+    }
+    return await res.json();
+  },
+
+  async getAdminEmployees(): Promise<AdminEmployeesSummary> {
+    const res = await fetch(`${API_BASE}/admin/employees`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải danh sách nhân viên');
+    }
+    return await res.json();
+  },
+
+  async createAdminEmployee(data: {
+    full_name: string;
+    email: string;
+    phone: string;
+    password?: string;
+    employee_code?: string;
+    team_name?: string;
+    assigned_area?: string;
+  }): Promise<AdminEmployeeItem> {
+    const res = await fetch(`${API_BASE}/admin/employees`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Thêm nhân viên thất bại');
+    }
+    return await res.json();
+  },
+
+  async deleteAdminEmployee(employeeId: number): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE}/admin/employees/${employeeId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Xóa nhân viên thất bại');
+    }
+    return await res.json();
+  },
+
+  async toggleEmployeeStatus(employeeId: number): Promise<{ success: boolean; is_active: boolean }> {
+    const res = await fetch(`${API_BASE}/admin/employees/${employeeId}/toggle-status`, {
+      method: 'PUT',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Cập nhật trạng thái thất bại');
+    }
+    return await res.json();
+  },
+
+  async getAdminInvoices(params?: { status?: string; billing_period?: string; search?: string }): Promise<AdminInvoicesSummary> {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.billing_period) query.append('billing_period', params.billing_period);
+    if (params?.search) query.append('search', params.search);
+
+    const url = `${API_BASE}/admin/invoices${query.toString() ? `?${query.toString()}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải danh sách hóa đơn');
+    }
+    return await res.json();
+  },
+
+  async createAdminInvoice(payload: CreateInvoicePayload): Promise<AdminInvoiceItem> {
+    const res = await fetch(`${API_BASE}/admin/invoices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể lập hóa đơn mới');
+    }
+    return await res.json();
+  },
+
+  async updateInvoiceStatus(invoiceId: number, payment_status: string) {
+    const res = await fetch(`${API_BASE}/admin/invoices/${invoiceId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_status }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể cập nhật trạng thái hóa đơn');
+    }
+    return await res.json();
+  },
+
+  async deleteAdminInvoice(invoiceId: number) {
+    const res = await fetch(`${API_BASE}/admin/invoices/${invoiceId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể xóa hóa đơn');
+    }
+    return await res.json();
+  },
+
+  getExportInvoicesUrl(params?: { status?: string; billing_period?: string; search?: string }): string {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.billing_period) query.append('billing_period', params.billing_period);
+    if (params?.search) query.append('search', params.search);
+    return `${API_BASE}/admin/invoices/export${query.toString() ? `?${query.toString()}` : ''}`;
+  },
+
+  async resolveAdminComplaint(complaintId: number) {
+    const res = await fetch(`${API_BASE}/admin/complaints/${complaintId}/resolve`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể xử lý khiếu nại');
+    }
+    return await res.json();
+  },
+
+  async getAdminPricing(): Promise<AdminPricingData> {
+    const res = await fetch(`${API_BASE}/admin/pricing`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải biểu giá');
+    }
+    return await res.json();
+  },
+
+  async getPricingHistory(): Promise<TariffHistoryItem[]> {
+    const res = await fetch(`${API_BASE}/admin/pricing/history`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải lịch sử biểu giá');
+    }
+    return await res.json();
+  },
+
+  async createAdminTariff(payload: CreateTariffPayload): Promise<AdminPricingData> {
+    const res = await fetch(`${API_BASE}/admin/pricing/tariffs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tạo biểu giá mới');
+    }
+    return await res.json();
+  },
+
+  async updateTierPrice(tierId: number, unit_price: number): Promise<{ success: boolean; message: string; unit_price: number }> {
+    const res = await fetch(`${API_BASE}/admin/pricing/tiers/${tierId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ unit_price }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể cập nhật đơn giá');
+    }
+    return await res.json();
+  },
+
+  async getAdminReports(period?: string): Promise<AdminReportsData> {
+    const url = `${API_BASE}/admin/reports${period ? `?billing_period=${encodeURIComponent(period)}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải báo cáo thống kê');
+    }
+    return await res.json();
+  },
+
+  getExportReportsUrl(period?: string): string {
+    return `${API_BASE}/admin/reports/export${period ? `?billing_period=${encodeURIComponent(period)}` : ''}`;
+  },
+
+  async getAdminComplaints(status?: string): Promise<ComplaintListItem[]> {
+    const url = `${API_BASE}/admin/complaints${status ? `?status=${encodeURIComponent(status)}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải danh sách khiếu nại');
+    }
+    return await res.json();
+  },
+
+  async getAdminComplaintStats(): Promise<ComplaintStatsSummary> {
+    const res = await fetch(`${API_BASE}/admin/complaints/stats`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải thống kê khiếu nại');
+    }
+    return await res.json();
+  },
+
+  async getAdminComplaintDetail(id: number): Promise<ComplaintAuditDetail> {
+    const res = await fetch(`${API_BASE}/admin/complaints/${id}/detail`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Không thể tải chi tiết khiếu nại');
+    }
+    return await res.json();
+  },
+
+  async makeComplaintDecision(id: number, payload: { decision: string; actual_reading?: number; notes?: string }) {
+    const res = await fetch(`${API_BASE}/admin/complaints/${id}/decision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Thao tác quyết định thất bại');
+    }
+    return await res.json();
+  },
 };

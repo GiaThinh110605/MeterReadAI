@@ -12,9 +12,6 @@ from fastapi import HTTPException, status
 from app.core.config import settings
 from app.schemas.ai import PolygonPoint, PredictionDetail, VisualizationDetail
 
-# =====================================================================
-# CRNN Architecture for OCR
-# =====================================================================
 class BidirectionalLSTM(nn.Module):
     def __init__(self, nIn: int, nHidden: int, nOut: int):
         super().__init__()
@@ -27,7 +24,6 @@ class BidirectionalLSTM(nn.Module):
         t_rec = recurrent.view(T * b, h)
         output = self.embedding(t_rec)
         return output.view(T, b, -1)
-
 
 class CRNN(nn.Module):
     def __init__(self, imgH: int = 32, nc: int = 1, nclass: int = 11, nh: int = 256):
@@ -70,10 +66,6 @@ class CRNN(nn.Module):
         conv = conv.squeeze(2).permute(2, 0, 1)
         return self.rnn(conv)
 
-
-# =====================================================================
-# AI Service Class
-# =====================================================================
 class AIService:
     _instance = None
     yolo_model = None
@@ -84,19 +76,13 @@ class AIService:
         self._load_models()
 
     def _load_models(self):
-        # 1. Load YOLO11-seg
         try:
             from ultralytics import YOLO
             if os.path.exists(settings.YOLO_MODEL_PATH):
                 self.yolo_model = YOLO(settings.YOLO_MODEL_PATH)
-                print(f"[AIService] Loaded YOLO11-seg from {settings.YOLO_MODEL_PATH}")
-            else:
-                print(f"[AIService] YOLO model not found at {settings.YOLO_MODEL_PATH}. Using fallback.")
-        except Exception as e:
-            print(f"[AIService] Could not load YOLO model: {e}")
+        except Exception:
             self.yolo_model = None
 
-        # 2. Load CRNN OCR
         try:
             if os.path.exists(settings.CRNN_MODEL_PATH):
                 checkpoint = torch.load(settings.CRNN_MODEL_PATH, map_location="cpu")
@@ -109,11 +95,7 @@ class AIService:
                     transforms.ToTensor(),
                     transforms.Normalize((0.5,), (0.5,))
                 ])
-                print(f"[AIService] Loaded CRNN OCR from {settings.CRNN_MODEL_PATH}")
-            else:
-                print(f"[AIService] CRNN model not found at {settings.CRNN_MODEL_PATH}")
-        except Exception as e:
-            print(f"[AIService] Could not load CRNN model: {e}")
+        except Exception:
             self.crnn_model = None
 
     @classmethod
@@ -123,16 +105,13 @@ class AIService:
         return cls._instance
 
     def validate_image_bytes(self, contents: bytes):
-        """Kiểm tra dung lượng và Magic Bytes của file ảnh (bảo mật nghiêm ngặt)."""
         if len(contents) > settings.MAX_FILE_SIZE_BYTES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Dung lượng tệp vượt quá giới hạn cho phép ({settings.MAX_FILE_SIZE_BYTES / (1024*1024):.0f}MB)."
             )
         
-        # JPEG: FF D8 FF
         is_jpeg = len(contents) >= 3 and contents[0] == 0xFF and contents[1] == 0xD8 and contents[2] == 0xFF
-        # PNG: 89 50 4E 47 0D 0A 1A 0A
         is_png = len(contents) >= 8 and contents[:8] == b"\x89PNG\r\n\x1a\n"
 
         if not (is_jpeg or is_png):
@@ -142,7 +121,6 @@ class AIService:
             )
 
     def decode_image_safely(self, contents: bytes) -> np.ndarray:
-        """Đọc và giải mã byte ảnh an toàn qua OpenCV."""
         self.validate_image_bytes(contents)
         np_arr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
@@ -153,41 +131,79 @@ class AIService:
             )
         return img
 
+    def _decode_tensor(self, tensor: torch.Tensor) -> Tuple[str, float]:
+        with torch.no_grad():
+            output = self.crnn_model(tensor)
+            pred = output.argmax(dim=2).permute(1, 0)
+            chars = []
+            previous = 10
+            for index in pred[0]:
+                idx = index.item()
+                if idx == 10:
+                    previous = idx
+                    continue
+                if idx == previous:
+                    continue
+                chars.append(str(idx))
+                previous = idx
+
+            seq = "".join(chars)
+            if not seq:
+                return "", 0.0
+
+            # Xử lý ký tự lặp ở đuôi do co giãn chiều ngang CTC
+            if len(seq) == 6 and seq[-1] == seq[-2]:
+                seq = seq[:-1]
+
+            probs = torch.softmax(output, dim=2)
+            max_probs, _ = probs.max(dim=2)
+            conf = float(max_probs.mean().item())
+            return seq, round(float(conf), 3)
+
     def _ocr_crop(self, crop_bgr: np.ndarray) -> Tuple[str, float]:
-        """Chạy mô hình CRNN hoặc phương pháp nhận dạng trên ảnh đã cắt vùng số."""
+        if crop_bgr is None or crop_bgr.size == 0:
+            return "", 0.0
+
+        gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY)
+        if float(gray.std()) < 8.0:
+            return "", 0.0
+
         if self.crnn_model is not None and self.crnn_transform is not None:
             try:
-                rgb_img = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)
-                pil_img = Image.fromarray(rgb_img)
-                tensor = self.crnn_transform(pil_img).unsqueeze(0)  # [1, 1, 32, 100]
-                with torch.no_grad():
-                    output = self.crnn_model(tensor)  # [T, 1, 11]
-                    pred = output.argmax(dim=2).permute(1, 0)
-                    
-                    chars = []
-                    previous = 10
-                    for index in pred[0]:
-                        idx = index.item()
-                        if idx == 10:  # blank
-                            previous = idx
-                            continue
-                        if idx == previous:
-                            continue
-                        chars.append(str(idx))
-                        previous = idx
-                    
-                    seq = "".join(chars)
-                    if len(seq) >= 3:
-                        # Softmax confidence
-                        probs = torch.softmax(output, dim=2)
-                        max_probs, _ = probs.max(dim=2)
-                        conf = float(max_probs.mean().item())
-                        return seq, max(0.85, min(conf, 0.999))
-            except Exception as e:
-                print(f"[AIService] CRNN inference error: {e}")
+                candidates: List[Tuple[str, float]] = []
 
-        # Fallback OCR / Mock reader
-        return "01258", 0.986
+                # 1. Ảnh Grayscale trực tiếp
+                pil1 = Image.fromarray(gray)
+                t1 = self.crnn_transform(pil1).unsqueeze(0)
+                s1, c1 = self._decode_tensor(t1)
+                if s1:
+                    candidates.append((s1, c1))
+
+                # 2. Tiền xử lý CLAHE tăng cường độ tương phản
+                clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                cl_gray = clahe.apply(gray)
+                pil2 = Image.fromarray(cl_gray)
+                t2 = self.crnn_transform(pil2).unsqueeze(0)
+                s2, c2 = self._decode_tensor(t2)
+                if s2:
+                    candidates.append((s2, c2))
+
+                # 3. Nếu vùng cắt dạng dọc (h > w * 1.2), kiểm tra xoay góc
+                h, w = crop_bgr.shape[:2]
+                if h > w * 1.2:
+                    rot_ccw = cv2.rotate(gray, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    t3 = self.crnn_transform(Image.fromarray(rot_ccw)).unsqueeze(0)
+                    s3, c3 = self._decode_tensor(t3)
+                    if s3:
+                        candidates.append((s3, c3))
+
+                if candidates:
+                    candidates.sort(key=lambda x: (1 if 4 <= len(x[0]) <= 6 else 0, x[1]), reverse=True)
+                    return candidates[0]
+            except Exception:
+                pass
+
+        return "", 0.0
 
     def predict(
         self,
@@ -195,13 +211,6 @@ class AIService:
         meter_id: int,
         previous_index: float = 1240.0
     ) -> Tuple[PredictionDetail, VisualizationDetail, str, str]:
-        """
-        Thực hiện toàn bộ quy trình:
-        1. Decode OpenCV
-        2. YOLO11-seg định vị hộp số (dial box) & polygon
-        3. Cắt vùng số & lưu file raw/crop
-        4. CRNN đọc chuỗi chữ số (bảo toàn số 0 ở đầu)
-        """
         img = self.decode_image_safely(image_bytes)
         h, w, _ = img.shape
 
@@ -212,21 +221,19 @@ class AIService:
         raw_path = settings.UPLOAD_DIR / "raw" / raw_filename
         crop_path = settings.UPLOAD_DIR / "crop" / crop_filename
 
-        # Lưu ảnh gốc
         cv2.imwrite(str(raw_path), img)
 
         bbox = []
         polygon = []
         cropped_img = None
-        det_conf = 0.986
+        det_conf = 0.0
 
-        # Chạy YOLO11-seg nếu có
         if self.yolo_model is not None:
             try:
                 results = self.yolo_model(img, conf=0.25, verbose=False)
                 if len(results) > 0 and len(results[0].boxes) > 0:
                     box = results[0].boxes[0]
-                    det_conf = float(box.conf[0].item())
+                    det_conf = round(float(box.conf[0].item()), 3)
                     x1, y1, x2, y2 = [int(v.item()) for v in box.xyxy[0]]
                     bbox = [max(0, x1), max(0, y1), min(w, x2), min(h, y2)]
                     
@@ -241,45 +248,38 @@ class AIService:
                             PolygonPoint(x=bbox[0], y=bbox[3]),
                         ]
                     cropped_img = img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-            except Exception as e:
-                print(f"[AIService] YOLO execution failed: {e}")
+            except Exception:
+                pass
 
-        # Fallback crop & bbox nếu YOLO không phát hiện ra
         if cropped_img is None or cropped_img.size == 0 or len(bbox) == 0:
-            # Vùng số thường nằm ở 1/3 đến 2/3 trung tâm ảnh
-            x1, y1 = int(w * 0.22), int(h * 0.40)
-            x2, y2 = int(w * 0.78), int(h * 0.62)
-            bbox = [x1, y1, x2, y2]
-            polygon = [
-                PolygonPoint(x=x1, y=y1),
-                PolygonPoint(x=x2, y=y1),
-                PolygonPoint(x=x2, y=y2),
-                PolygonPoint(x=x1, y=y2),
-            ]
-            cropped_img = img[y1:y2, x1:x2]
-            det_conf = 0.986
-
-        # Lưu ảnh cắt vùng số
-        cv2.imwrite(str(crop_path), cropped_img)
-
-        # Chạy OCR
-        raw_seq, rec_conf = self._ocr_crop(cropped_img)
+            bbox = []
+            polygon = []
+            det_conf = 0.0
+            raw_seq = ""
+            rec_conf = 0.0
+        else:
+            cv2.imwrite(str(crop_path), cropped_img)
+            raw_seq, rec_conf = self._ocr_crop(cropped_img)
         
-        # Nếu chuỗi đọc được là số hợp lệ
-        # BẢO TOÀN SỐ 0 Ở ĐẦU (ví dụ '01258')
         predicted_seq = raw_seq
         try:
-            num_val = float(predicted_seq)
+            num_val = float(predicted_seq) if predicted_seq else 0.0
         except ValueError:
-            predicted_seq = "01258"
-            num_val = 1258.0
+            predicted_seq = ""
+            num_val = 0.0
 
-        overall_conf = round(float((det_conf + rec_conf) / 2.0), 3)
-        if overall_conf <= 0 or overall_conf > 1.0:
-            overall_conf = 0.986
+        if not predicted_seq or rec_conf == 0.0:
+            overall_conf = 0.0
+            predicted_seq = ""
+            num_val = 0.0
+        else:
+            if det_conf > 0:
+                overall_conf = round(float((det_conf + rec_conf) / 2.0), 3)
+            else:
+                overall_conf = round(float(rec_conf), 3)
 
         raw_url = f"/uploads/raw/{raw_filename}"
-        crop_url = f"/uploads/crop/{crop_filename}"
+        crop_url = f"/uploads/crop/{crop_filename}" if cropped_img is not None else ""
 
         prediction = PredictionDetail(
             predictedSequence=predicted_seq,
@@ -292,7 +292,9 @@ class AIService:
             originalImageUrl=raw_url,
             croppedImageUrl=crop_url,
             polygon=polygon,
-            bbox=bbox
+            bbox=bbox,
+            imageWidth=w,
+            imageHeight=h
         )
 
         return prediction, visualization, raw_url, crop_url

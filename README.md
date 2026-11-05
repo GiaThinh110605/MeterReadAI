@@ -547,7 +547,7 @@ print(f"🎭 Mask mAP50: {metrics.seg.map50:.4f}")
 
 ### Cách 1: Khởi chạy bằng Docker Compose (Khuyên dùng)
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 - **Frontend UI (Nhân viên tác nghiệp)**: [http://localhost:3000](http://localhost:3000)
 - **Backend API Docs (Swagger UI)**: [http://localhost:8000/api/v1/docs](http://localhost:8000/api/v1/docs)

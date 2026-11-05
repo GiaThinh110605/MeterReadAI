@@ -1,8 +1,10 @@
 import uuid
+from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.meter import WaterMeter
+from app.models.route import Route
 from app.schemas.ai import AIPredictResponse
 from app.services.ai_service import AIService
 
@@ -11,7 +13,7 @@ router = APIRouter(prefix="/ai", tags=["AI Vision Core"])
 @router.post("/predict", response_model=AIPredictResponse)
 async def predict_water_meter(
     file: UploadFile = File(..., description="Ảnh chụp mặt số đồng hồ nước (JPEG/PNG)"),
-    meterId: int = Form(..., description="ID đồng hồ nước cần nhận diện"),
+    meterId: Optional[int] = Form(None, description="ID đồng hồ nước cần nhận diện (tùy chọn)"),
     db: Session = Depends(get_db)
 ):
     """
@@ -20,11 +22,21 @@ async def predict_water_meter(
     - YOLO11-seg: Cắt vùng dial / polygon.
     - CRNN: Nhận diện chuỗi ký tự (BẢO TOÀN SỐ 0 Ở ĐẦU).
     """
-    meter = db.query(WaterMeter).filter(WaterMeter.id == meterId).first()
+    meter = None
+    if meterId is not None:
+        meter = db.query(WaterMeter).filter(WaterMeter.id == meterId).first()
+        if not meter:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Không tìm thấy đồng hồ nước với ID: {meterId}"
+            )
+    else:
+        meter = db.query(WaterMeter).first()
+
     if not meter:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Không tìm thấy đồng hồ nước với ID: {meterId}"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Chưa có dữ liệu đồng hồ nước trong hệ thống."
         )
 
     contents = await file.read()

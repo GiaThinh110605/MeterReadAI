@@ -23,3 +23,5 @@
 - **Cấu hình CORS & Injection:**
   - Giới hạn CORS chỉ cho phép nguồn gốc đáng tin cậy của Frontend (ví dụ: `http://localhost:3000`, `http://localhost:5173`).
   - Toàn bộ truy vấn cơ sở dữ liệu phải qua SQLAlchemy ORM hoặc parameterized query, tuyệt đối không nối chuỗi raw SQL để tránh SQL Injection.
+- Xóa dữ liệu (mock data để test) sau khi testing thành công
+- Xóa tất cả comment

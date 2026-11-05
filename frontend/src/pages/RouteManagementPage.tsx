@@ -93,15 +93,24 @@ export const RouteManagementPage: React.FC<RouteManagementPageProps> = ({ onOpen
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {data.routes.map((route) => (
-            <RouteCard
-              key={route.id}
-              route={route}
-              onOpenRoute={onOpenMeterReading}
-            />
-          ))}
-        </div>
+        {data.routes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {data.routes.map((route) => (
+              <RouteCard
+                key={route.id}
+                route={route}
+                onOpenRoute={onOpenMeterReading}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl p-10 text-center border border-slate-200">
+            <p className="text-slate-700 font-bold text-sm">Chưa có tuyến đọc nào được phân công</p>
+            <p className="text-slate-400 text-xs mt-1">
+              Dữ liệu tuyến và danh sách đồng hồ sẽ xuất hiện sau khi được quản trị viên phân công.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Priority customers card */}

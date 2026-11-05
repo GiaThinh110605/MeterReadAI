@@ -16,6 +16,9 @@ class MeterSummaryResponse(BaseModel):
     isPriority: bool = False
     priorityReason: Optional[str] = None
     notes: Optional[str] = None
+    imageUrl: Optional[str] = None
+    readingDate: Optional[str] = None
+    recordedBy: Optional[str] = None
 
 class RouteItemResponse(BaseModel):
     id: int
