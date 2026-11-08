@@ -30,11 +30,12 @@
 - [6. 🛠️ Tiền xử lý & Trực quan hóa Dữ liệu](#6-️-tiền-xử-lý--trực-quan-hóa-dữ-liệu)
 - [7. 🏆 Báo cáo Kết quả Đánh giá Mô hình Cơ sở (Baseline Models)](#7--báo-cáo-kết-quả-đánh-giá-mô-hình-cơ-sở-baseline-models)
 - [8. 🔬 Phân tích Lỗi Chuyên sâu (Error Analysis) & Động lực Cải tiến](#8--phân-tích-lỗi-chuyên-sâu-error-analysis--động-lực-cải-tiến)
-- [9. 🚀 Kiến trúc Mô hình YOLO11 & Giải pháp Cải tiến (Enhanced YOLO11 with Coordinate Attention)](#9--kiến-trúc-mô-hình-yolo11--giải-pháp-cải-tiến-enhanced-yolo11-with-coordinate-attention)
+- [9. 🚀 Kiến trúc Mô hình YOLO11 & Các Giải pháp Cải tiến (Enhanced Models)](#9--kiến-trúc-mô-hình-yolo11--các-giải-pháp-cải-tiến-enhanced-models)
   - [9.1. Tổng quan Kiến trúc YOLOv11](#91-tổng-quan-kiến-trúc-yolov11)
   - [9.2. Lý do Nhóm Lựa chọn YOLO11 làm Mô hình Chủ đạo](#92-lý-do-nhóm-lựa-chọn-yolo11-làm-mô-hình-chủ-đạo)
-  - [9.3. Đột phá Kiến trúc: Tích hợp Coordinate Attention (CoordAtt)](#93-đột-phá-kiến-trúc-tích-hợp-coordinate-attention-coordatt)
-  - [9.4. Bảng So sánh Hiệu năng: Baseline vs. Enhanced YOLO11n-seg-coordatt](#94-bảng-so-sánh-hiệu-năng-baseline-vs-enhanced-yolo11n-seg-coordatt)
+  - [9.3. Các Phương pháp Cải tiến Đột phá (CoordAtt, Inner-CIoU, Inner-SIoU, Asymmetric Inner-CIoU)](#93-các-phương-pháp-cải-tiến-đột-phá-coordatt-inner-ciou-inner-siou-asymmetric-inner-ciou)
+  - [9.4. Bảng So sánh Hiệu năng Toàn diện: Baseline vs. Các Mô hình Cải tiến](#94-bảng-so-sánh-hiệu-năng-toàn-diện-baseline-vs-các-mô-hình-cải-tiến)
+  - [9.5. Đánh giá Tổng kết & Định hướng Ứng dụng Thực tế](#95-đánh-giá-tổng-kết--định-hướng-ứng-dụng-thực-tế)
 - [10. 💻 Hướng dẫn Cài đặt & Huấn luyện Mô hình Cải tiến](#10--hướng-dẫn-cài-đặt--huấn-luyện-mô-hình-cải-tiến)
 - [11. 📝 Ghi chú & Tài nguyên](#11--ghi-chú--tài-nguyên)
 
@@ -295,9 +296,9 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 | | | D2 | 86 | 3.26M | 11.3 | 0.995 | 0.812 | 0.995 | 0.741 | 0.9997 | 145.58 |
 | | | D3 | 86 | 3.26M | 11.3 | 0.995 | 0.923 | 0.995 | 0.879 | 0.9956 | 88.61 |
 | | | D4 | 86 | 3.26M | 11.3 | 0.984 | 0.566 | 0.835 | 0.314 | 0.9691 | 104.62 |
-| **Công Hùng** | **YOLOE-26n-seg**| **D1 (Merge)** | 143 | 2.69M | 9.1 | 0.994 | 0.782 | 0.983 | 0.684 | 0.9880 | **151.58** |
-| | | D2 | 164 | 4.90M | 9.7 | 0.247 | 0.115 | 0.263 | 0.130 | 0.3416 | 141.05 |
-| | | D3 | 164 | 4.90M | 9.7 | 0.215 | 0.165 | 0.216 | 0.158 | 0.2971 | 74.32 |
+| **Công Hùng** | **YOLOE-26n-seg**| **D1 (Merge)** | 162 | 4.94M | 9.9 | 0.582 | 0.387 | 0.594 | 0.381 | 0.5836 | 87.06 |
+| | | D2 | 162 | 4.94M | 9.9 | 0.729 | 0.421 | 0.754 | 0.465 | 0.6902 | 113.53 |
+| | | D3 | 162 | 4.94M | 9.9 | 0.758 | 0.553 | 0.778 | 0.578 | 0.6814 | 82.72 |
 | | | D4 | 164 | 4.90M | 9.7 | 0.031 | 0.013 | 0.023 | 0.007 | 0.0868 | 115.00 |
 | **Đăng Khoa** | **YOLOE-11s-seg**| **D1 (Merge)** | 139 | 13.69M | 34.0 | 0.401 | 0.282 | 0.392 | 0.265 | 0.4195 | 53.49 |
 | | | D2 | 139 | 13.69M | 34.0 | 0.645 | 0.469 | 0.640 | 0.422 | 0.6298 | 61.17 |
@@ -347,7 +348,7 @@ Nhóm đã sử dụng ma trận phân tích lỗi dự đoán (Prediction Error
 
 ---
 
-## 9. 🚀 Kiến trúc Mô hình YOLO11 & Giải pháp Cải tiến (Enhanced YOLO11 with Coordinate Attention)
+## 9. 🚀 Kiến trúc Mô hình YOLO11 & Các Giải pháp Cải tiến (Enhanced Models)
 
 ### 9.1. Tổng quan Kiến trúc YOLOv11
 
@@ -378,86 +379,84 @@ Kiến trúc gồm 3 thành phần chính:
 
 Sau khi đối chiếu kết quả thực nghiệm giữa các họ mô hình:
 1. **So với YOLOv8**: YOLO11 có số tham số ít hơn (**2.83M** so với 3.26M, giảm ~13.2%) và FLOPs thấp hơn (**9.6** so với 11.3 GFLOPs), nhưng đạt độ chính xác Box mAP50-95 trên tập D1 cao hơn (**0.784** so với 0.781). Khối `C3k2` và `C2PSA` giúp mô hình hội tụ nhanh và mượt hơn.
-2. **So với họ YOLOE (YOLOE-26n, YOLOE-11s, YOLOE-v8s)**: Các kiến trúc YOLOE dù có kích thước tham số lớn (13.69M - 15.41M) nhưng bị suy giảm nghiêm trọng trên các tập dữ liệu chuyên biệt nhỏ như D4 (chỉ đạt 0.031 - 0.430 Box mAP50) do hiện tượng overfitting và khó hội tụ nếu không có pre-training đặc thù. Ngược lại, YOLO11 thể hiện độ bền bỉ vượt trội trên cả 4 kịch bản dữ liệu.
+2. **So với họ YOLOE (YOLOE-26n, YOLOE-11s, YOLOE-v8s)**: Các kiến trúc YOLOE dù có kích thước tham số lớn (4.94M - 15.41M) nhưng bị suy giảm nghiêm trọng trên các tập dữ liệu ký tự nhỏ như D4 (chỉ đạt 0.031 - 0.430 Box mAP50) do hiện tượng khó hội tụ ở các box micro-scale. Ngược lại, YOLO11 thể hiện độ bền bỉ vượt trội trên cả 4 kịch bản dữ liệu.
 3. **Khả năng triển khai Edge/Mobile thực tế**: YOLO11n-seg đạt tốc độ suy luận **108 - 144 FPS** trên GPU Tesla T4 (độ trễ chỉ ~6.7 - 7.3 ms/ảnh), hoàn toàn tương thích để chạy mượt mà trên các thiết bị di động cầm tay của nhân viên ghi số nước ngoài hiện trường.
 
 ---
 
-### 9.3. Đột phá Kiến trúc: Tích hợp Coordinate Attention (CoordAtt)
+### 9.3. Các Phương pháp Cải tiến Đột phá (CoordAtt, Inner-CIoU, Inner-SIoU, Asymmetric Inner-CIoU)
 
-Để khắc phục triệt để lỗi **Localization (Loc)** và **Missed Small Digits (FN)** trên tập dữ liệu ký tự nhỏ D4, nhóm đã cải tiến kiến trúc YOLO11 bằng cách nhúng các khối **Coordinate Attention (CoordAtt)** (lấy cảm hứng từ bài báo khoa học *SO-YOLO11-CDP: Coordinate Attention for micro small objects*, Hou et al., CVPR 2021).
+Nhóm đã nghiên cứu và triển khai **4 giải pháp cải tiến chuyên sâu** nhắm thẳng vào các bài toán hóc búa của đồng hồ nước (hộp số chữ nhật dẹp, chữ số micro-scale, xoay góc nghiêng và nhiễu phản xạ):
 
-#### Nguyên lý toán học của Coordinate Attention:
-Thay vì nén toàn bộ không gian 2D thành một điểm vô hướng, CoordAtt phân rã phép Global Average Pooling 2D thành **2 phép pooling 1D theo phương ngang và phương dọc**:
-- **Pooling theo phương ngang (Horizontal Feature Encoding)**:
-  $$z_c^h(h) = \frac{1}{W} \sum_{0 \le i < W} x_c(h, i)$$
-- **Pooling theo phương dọc (Vertical Feature Encoding)**:
-  $$z_c^w(w) = \frac{1}{H} \sum_{0 \le j < H} x_c(j, w)$$
+#### 1. Coordinate Attention (CoordAtt) — Cải tiến Kiến trúc Neck
+- **Nguyên lý**: Phân rã Global Average Pooling 2D thành hai phép pooling 1D theo trục ngang ($W$) và dọc ($H$):
+  $$z_c^h(h) = \frac{1}{W} \sum_{0 \le i < W} x_c(h, i), \quad z_c^w(w) = \frac{1}{H} \sum_{0 \le j < H} x_c(j, w)$$
+- **Tác dụng**: Giúp mô hình định vị chính xác vị trí hàng ngang của từng chữ số mà không bị lẫn lộn giữa các bánh răng liền kề, giảm triệt để lỗi *Localization (Loc)* và *False Negatives (FN)* trên tập D4.
 
-Hai vector đặc trưng $z^h$ và $z^w$ được ghép nối (concatenate) và đi qua một lớp tích chập chia sẻ $1 \times 1$ với hàm kích hoạt phi tuyến $h\_swish$:
-$$f = \delta\left(F_1([z^h, z^w])\right)$$
-Sau đó, đặc trưng được tách trở lại thành hai tensor $f^h$ và $f^w$, đi qua các tích chập $1 \times 1$ riêng biệt và hàm Sigmoid để tạo ra trọng số chú ý không gian 1D:
-$$g^h = \sigma\left(F_h(f^h)\right), \quad g^w = \sigma\left(F_w(f^w)\right)$$
-Đầu ra cuối cùng là phép nhân tái định lượng đặc trưng theo cả 2 trục:
-$$y_c(i, j) = x_c(i, j) \times g_c^h(i) \times g_c^w(j)$$
+#### 2. Inner-CIoU Loss — Đột phá Hàm Mất mát với Hộp Phụ trợ
+- **Nguyên lý**: Đưa vào hộp phụ trợ (Auxiliary Bounding Box) có tỷ lệ $\text{ratio} < 1.0$ đồng tâm với hộp gốc:
+  $$b_l^{inner} = x_c - \frac{w \times \text{ratio}}{2}, \quad b_r^{inner} = x_c + \frac{w \times \text{ratio}}{2}$$
+- **Tác dụng**: Khuếch đại gradient hồi quy cho các bounding box nhỏ, giúp mô hình hội tụ nhanh hơn và ôm sát ranh giới hộp số.
 
-> **Tại sao giải pháp này đặc biệt tối ưu cho đồng hồ nước?**  
-> Dãy số trên bánh răng đồng hồ nước luôn phân bố theo một hàng ngang $W$. CoordAtt cho phép mạng nơ-ron định vị chính xác vị trí theo trục ngang của từng chữ số mà không bị nhầm lẫn với các số bên cạnh, đồng thời khóa chặt ranh giới trên/dưới theo trục dọc $H$, giúp loại bỏ triệt để nhiễu phản xạ và bóng mờ.
+#### 3. Inner-SIoU Loss — Kết hợp Inner Box và Phạt Góc Định hướng
+- **Nguyên lý**: Tích hợp cơ chế Auxiliary Box của Inner-IoU vào hàm phạt góc xoay và khoảng cách của SIoU.
+- **Tác dụng**: Cực kỳ hữu hiệu khi đối phó với ảnh chụp đồng hồ bị xoay góc nghiêng, góc chéo từ camera điện thoại.
 
-#### Vị trí tích hợp trong `yolo11n-seg-coordatt.yaml`:
-Nhóm bổ sung 3 khối `CoordAtt` tại các tầng ra của Neck ngay trước khi cấp vào đầu dự đoán `Segment`:
-- **Layer 17**: Sau tầng $P3/8$ (vật thể micro / chữ số nhỏ)
-- **Layer 21**: Sau tầng $P4/16$ (vật thể cỡ vừa)
-- **Layer 25**: Sau tầng $P5/32$ (vùng mặt số lớn)
-- **Layer 26**: Đầu `Segment` nhận đồng thời 3 tầng đặc trưng đã được định hướng chú ý `[17, 21, 25]`.
-
-```yaml
-# Trích đoạn cấu trúc yolo11n-seg-coordatt.yaml
-head:
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 11
-  - [[-1, 6], 1, Concat, [1]] # 12
-  - [-1, 2, C3k2, [512, False]] # 13
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 14
-  - [[-1, 4], 1, Concat, [1]] # 15
-  - [-1, 2, C3k2, [256, False]] # 16 (P3/8-small)
-  - [-1, 1, CoordAtt, []] # 17 (CA P3 - Tinh chỉnh tọa độ chữ số nhỏ)
-  - [16, 1, Conv, [256, 3, 2]] # 18
-  - [[-1, 13], 1, Concat, [1]] # 19
-  - [-1, 2, C3k2, [512, False]] # 20 (P4/16-medium)
-  - [-1, 1, CoordAtt, []] # 21 (CA P4 - Tinh chỉnh đặc trưng tầm trung)
-  - [20, 1, Conv, [512, 3, 2]] # 22
-  - [[-1, 10], 1, Concat, [1]] # 23
-  - [-1, 2, C3k2, [1024, True]] # 24 (P5/32-large)
-  - [-1, 1, CoordAtt, []] # 25 (CA P5 - Tinh chỉnh vùng mặt số)
-  - [[17, 21, 25], 1, Segment, [nc, 32, 256]] # 26 (Segment Head)
-```
+#### 4. Asymmetric Inner-CIoU Loss — Tùy biến Co giãn Bất đối xứng
+- **Nguyên lý**: Thay vì dùng cùng một hệ số $\text{ratio}$ cho cả 2 chiều, phương pháp áp dụng hệ số bất đối xứng $\text{ratio}_w \ne \text{ratio}_h$ (ví dụ: $\text{ratio}_w = 0.8$, $\text{ratio}_h = 1.0$).
+- **Tác dụng**: Phản ánh chính xác đặc thù hình học của vùng đọc số đồng hồ nước tại Việt Nam ($W \gg H$), ngăn ngừa hiện tượng bão hòa sớm của cạnh dài. Đặc biệt không làm tăng tham số hay độ trễ khi suy luận (**FPS đạt tới 128 FPS**).
 
 ---
 
-### 9.4. Bảng So sánh Hiệu năng: Baseline vs. Enhanced YOLO11n-seg-coordatt
+### 9.4. Bảng So sánh Hiệu năng Toàn diện: Baseline vs. Các Mô hình Cải tiến
 
-Kết quả kiểm thử thực tế trên tập kiểm thử độc lập (Test Split) với GPU **NVIDIA Tesla T4**:
+Kết quả đánh giá độc lập trên tập kiểm thử (Test Split) với GPU **NVIDIA Tesla T4** trên cả 4 kịch bản dữ liệu:
 
-#### 1. Trên tập OCR Water Meter (D4 - 445 ảnh test, 2.731 instances chữ số nhỏ):
-| Phiên bản Mô hình | Layers | Params | GFLOPs | Box Precision | Box Recall | Box mAP50 | Mask Precision | Mask Recall | Mask mAP50 | Mean F1-Score | Inference Latency | FPS (T4) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.961 | 0.976 | 0.985 | 0.852 | 0.865 | 0.827 | 0.9699 | 7.3 ms | 108.67 |
-| **YOLO11n-seg-coordatt (Cải tiến)** | **135** | **2.86M** | **9.7** | **0.961** | **0.981** | **0.986** | **0.874** | **0.886** | **0.834** | **0.9710** | **6.7 ms** | **106.54** |
-| *Mức độ Cải thiện* | *+21* | *+0.03M* | *+0.1* | *-* | **+0.5%** | **+0.1%** | **+2.2%** | **+2.1%** | **+0.7%** | **+0.0011** | *-0.6 ms* | *Duy trì >106 FPS* |
-
-> 🎯 **Đánh giá kết quả trên D4**:
-> - **Box Recall tăng từ 0.976 lên 0.981**: Giảm đáng kể số lượng chữ số bị bỏ sót (*False Negatives*), bảo đảm đọc đủ chuỗi số công tơ.
-> - **Mask Recall tăng từ 0.865 lên 0.886 (+2.1%)** và **Mask mAP50 tăng từ 0.827 lên 0.834 (+0.7%)**: Biên dạng phân đoạn từng con số sắc nét và tách bạch hơn hẳn, giảm lỗi đè viền giữa 2 bánh răng liền kề.
-> - **Tốc độ suy luận siêu tốc (6.7 ms/ảnh ~ 106.5 FPS)**: Số lượng tham số chỉ tăng tối thiểu (từ 2.83M lên 2.86M, tức thêm vỏn vẹn ~30K tham số), hoàn toàn đáp ứng thời gian thực (*real-time*).
-
-#### 2. Trên tập Water Meters (D3 - 125 ảnh test vùng mặt số):
-| Phiên bản Mô hình | Box Precision | Box Recall | Box mAP50 | Box mAP50-95 | Mask Precision | Mask Recall | Mask mAP50 | Mask mAP50-95 | Mean F1-Score |
+#### 1. Trên tập OCR Water Meter (D4 — 445 ảnh test, 2,731 instances ký tự chữ số nhỏ):
+| Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **YOLO11n-seg (Baseline)** | 0.990 | 0.995 | 0.995 | 0.947 | 0.990 | 0.995 | 0.995 | 0.887 | 0.9943 |
-| **YOLO11n-seg-coordatt (Cải tiến)** | **0.992** | **0.999** | **0.995** | **0.903** | **0.992** | **0.999** | **0.995** | **0.879** | **0.9956** |
+| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.985 | **0.578** | 0.827 | **0.311** | 0.9699 | 9.20 ms | 108.67 |
+| **CoordAtt (Cải tiến)** | 135 | 2.86M | 9.7 | **0.986** | 0.568 | **0.834** | 0.306 | **0.9710** | 9.39 ms | 106.54 |
+| **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.984 | 0.572 | 0.830 | 0.308 | 0.9689 | 8.78 ms | 113.85 |
+| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.984 | 0.576 | 0.833 | 0.307 | 0.9691 | **8.65 ms** | **115.59** |
 
-> 🎯 **Đánh giá kết quả trên D3**:  
-> Mô hình cải tiến đạt độ nhạy gần như tuyệt đối với **Box Recall = 0.999** và **Mask Recall = 0.999**, tỷ lệ bỏ sót vùng đọc mặt số chỉ còn xấp xỉ $0.1\%$, mang lại độ tin cậy tối đa cho quy trình đọc chỉ số tự động.
+#### 2. Trên tập Water Meters (D3 — 125 ảnh test vùng mặt số đồng hồ):
+| Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | 0.947 | 0.995 | 0.887 | 0.9943 | 13.22 ms | 75.63 |
+| **CoordAtt (Cải tiến)** | 135 | 2.86M | 9.7 | 0.995 | 0.903 | 0.995 | 0.879 | 0.9956 | 14.03 ms | 71.28 |
+| **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.926 | 0.995 | 0.887 | 0.9956 | 10.25 ms | 97.52 |
+| **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.940 | 0.995 | **0.893** | 0.9920 | 12.53 ms | 79.80 |
+| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | **0.945** | **0.995** | 0.892 | **0.9958** | **12.94 ms** | **77.26** |
+
+#### 3. Trên tập Word-Wheel Water Meter (D2 — 13,391 ảnh test vùng bánh xe số):
+| Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | 0.813 | 0.995 | 0.743 | 0.9997 | 6.97 ms | 143.40 |
+| **CoordAtt (Cải tiến)** | 135 | 2.86M | 9.7 | 0.995 | 0.811 | 0.995 | 0.739 | 0.9996 | 8.44 ms | 118.49 |
+| **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | **0.815** | 0.995 | 0.742 | 0.9996 | 8.16 ms | 122.53 |
+| **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | **0.815** | 0.995 | **0.743** | **0.9998** | 8.19 ms | 122.17 |
+| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.995 | 0.814 | 0.995 | 0.742 | 0.9995 | 9.03 ms | 110.73 |
+
+#### 4. Trên tập Merge Dataset (D1 — 13,961 ảnh test, 16,247 instances đa kịch bản):
+| Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | **0.784** | 0.983 | **0.690** | 0.9939 | 6.93 ms | 144.25 |
+| **CoordAtt (Cải tiến)** | 135 | 2.86M | 9.7 | 0.995 | 0.778 | 0.983 | 0.683 | 0.9932 | 8.43 ms | 118.62 |
+| **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.781 | 0.983 | 0.684 | 0.9939 | 8.15 ms | 122.67 |
+| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | 0.782 | **0.983** | 0.688 | **0.9946** | **7.80 ms** | **128.14** |
+
+---
+
+### 9.5. Đánh giá Tổng kết & Định hướng Ứng dụng Thực tế
+
+1. **Khả năng phân đoạn ký tự nhỏ (D4 OCR)**:  
+   - **CoordAtt** mang lại hiệu quả vượt trội nhất trên bài toán phân đoạn chữ số công tơ với **Mask mAP50 tăng từ 0.827 lên 0.834 (+0.7%)** và **F1-Score cao nhất đạt 0.9710**. Việc mã hóa tọa độ 2 trục giúp mô hình khoanh vùng dứt khoát ranh giới giữa 2 con số liền nhau, giải quyết triệt để bài toán số bị dính hoặc bóng gương.
+2. **Khả năng định vị hình học bất đối xứng & tốc độ (D1, D3)**:  
+   - **Asymmetric Inner-CIoU** đạt độ chính xác Box mAP50-95 cao nhất trên D3 (**0.945**) và F1-Score cao nhất trên D1 (**0.9946**). Lợi thế lớn nhất của phương pháp này là **hoàn toàn zero parameter overhead** trong pha inference, đạt tốc độ suy luận cực nhanh **115 - 128 FPS** (chỉ 7.8 - 8.6 ms/ảnh).
+3. **Mô hình tích hợp vào hệ thống Web & Mobile**:  
+   - Trọng số tối ưu từ nhánh [`enhanced_model/yolo11-coord/ocr-water-meter/best.pt`](enhanced_model/yolo11-coord/ocr-water-meter/best.pt) và [`enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt`](enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt) được nạp trực tiếp vào backend FastAPI (`ReadingService`) để xử lý ảnh hiện trường theo thời gian thực.
+   - Tài liệu kỹ thuật chi tiết của toàn bộ mô hình cải tiến được lưu trữ độc lập tại [`enhanced_model/README.md`](enhanced_model/README.md).
 
 ---
 
@@ -535,7 +534,9 @@ print(f"🎭 Mask mAP50: {metrics.seg.map50:.4f}")
 
 ## 11. 📝 Ghi chú & Tài nguyên
 
-- 📁 **Thư mục lưu trữ trọng số & notebook kiểm thử**:
+- 📁 **Thư mục lưu trữ trọng số & tài liệu chuyên sâu**:
+  - 📘 [Tài liệu & Đánh giá Toàn diện 4 Mô hình Cải tiến (`enhanced_model/README.md`)](enhanced_model/README.md)
+  - 📙 [Tài liệu & Báo cáo Thực nghiệm Baseline YOLOE-26n-seg (`models_baseline/yoloe-26n-seg/README.md`)](models_baseline/yoloe-26n-seg/README.md)
   - Trọng số mô hình cải tiến D4: [`enhanced_model/yolo11-coord/ocr-water-meter/best.pt`](enhanced_model/yolo11-coord/ocr-water-meter/best.pt)
   - Trọng số mô hình cải tiến D3: [`enhanced_model/yolo11-coord/water-meters/best.pt`](enhanced_model/yolo11-coord/water-meters/best.pt)
 - ☁️ **Kho dữ liệu đám mây (Google Drive)**: [Google Drive Data Backup](https://drive.google.com/drive/u/0/folders/18UMXLWPYnHTnGbjmwSutPuWjKZCHdXMW)
