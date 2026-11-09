@@ -30,6 +30,8 @@
 - [5. 🔍 Khám phá & Đánh giá Dữ liệu (EDA)](#5--khám-phá--đánh-giá-dữ-liệu-eda)
 - [6. 🛠️ Tiền xử lý & Trực quan hóa Dữ liệu](#6-️-tiền-xử-lý--trực-quan-hóa-dữ-liệu)
 - [7. 🏆 Báo cáo Kết quả Đánh giá Mô hình Cơ sở (Baseline Models)](#7--báo-cáo-kết-quả-đánh-giá-mô-hình-cơ-sở-baseline-models)
+  - [7.1. Phân đoạn Vùng Mặt số & Ký tự (Instance Segmentation Baseline)](#71-bảng-so-sánh-hiệu-năng-các-mô-hình-phân-đoạn-baseline-instance-segmentation)
+  - [7.2. Nhận diện Chuỗi Chữ số OCR Baseline Sau Data Augmentation (CRNN vs. Tesseract)](#72-nhận-diện-chuỗi-chữ-số-ocr-baseline-sau-data-augmentation-crnn-vs-tesseract)
 - [8. 🔬 Phân tích Lỗi Chuyên sâu (Error Analysis) & Động lực Cải tiến](#8--phân-tích-lỗi-chuyên-sâu-error-analysis--động-lực-cải-tiến)
 - [9. 🚀 Kiến trúc Mô hình YOLO11 & Các Giải pháp Cải tiến (Enhanced Models)](#9--kiến-trúc-mô-hình-yolo11--các-giải-pháp-cải-tiến-enhanced-models)
   - [9.1. Tổng quan Kiến trúc YOLOv11](#91-tổng-quan-kiến-trúc-yolov11)
@@ -207,6 +209,7 @@ Phục vụ bài toán cắt lọc vùng mặt số (`reading_region`) và nhậ
 | :--- | :--- | :--- | :--- | :--- |
 | **`data_1` (DuckDuckGo)** | Ảnh thu thập thực tế tại Việt Nam qua DuckDuckGo và gán nhãn nhận diện chữ số | 239 | 191 / 23 / 25 | [Google Drive - DuckDuckGo Dataset](https://drive.google.com/drive/folders/1_X-YEpZXvZ0kf4587wA0HyydjVwBagxR?usp=sharing) |
 | **`data_2` (Base Datasets)** | Dữ liệu gán nhãn nhận diện chữ số từ các tập dataset ban đầu (`ocr_water_meter` & `water_meters`) | 1,498 | 473 / 780 / 245 | [Google Drive - Base Datasets OCR Labels](https://drive.google.com/drive/folders/1NOSI8uuBCsmmhvh0fjHcnblbG5Q43TGB?usp=sharing) |
+| **`merge_recognition` (Sau Aug)** | Tập hợp nhất & Data Augmentation, gán nhãn chữ số động từ 4 đến 8 chữ số | **18,523** | **13,612 / 2,242 / 2,669** | *Huấn luyện OCR tổng quát* |
 
 ---
 
@@ -287,7 +290,7 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 - **D3 (water-meters)**: 125 ảnh test
 - **D4 (ocr-water-meter)**: 445 ảnh test, 2,731 instances
 
-### 📊 Bảng so sánh hiệu năng các mô hình Baseline
+### 7.1. Bảng so sánh hiệu năng các mô hình Phân đoạn Baseline (Instance Segmentation)
 
 | Phụ trách | Model | Dataset | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | FPS (T4) |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -319,6 +322,35 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 | | | D2 | 111 | 15.41M | 41.0 | 0.449 | 0.318 | 0.459 | 0.310 | 0.4875 | 60.53 |
 | | | D3 | 111 | 15.41M | 41.0 | 0.730 | 0.674 | 0.730 | 0.651 | 0.7272 | 43.07 |
 | | | D4 | 111 | 15.41M | 41.0 | 0.116 | 0.059 | 0.091 | 0.031 | 0.2279 | 52.25 |
+
+---
+
+### 7.2. Nhận diện Chuỗi Chữ số OCR Baseline Sau Data Augmentation (CRNN vs. Tesseract)
+
+#### 🎯 Bối cảnh Thực nghiệm & Động lực Data Augmentation:
+- **Hạn chế của bộ dữ liệu ban đầu:** Trong giai đoạn thử nghiệm đầu tiên, tập dữ liệu chỉ chứa các nhãn có độ dài cố định từ 5 đến 6 chữ số. Do không gian nhãn đơn điệu, mô hình dễ đạt chỉ số đánh giá rất cao trên tập kiểm thử hẹp nhưng thực chất bị phụ thuộc vào độ dài cố định (*length bias*) và kém khả năng tổng quát hóa khi gặp mặt đồng hồ có cấu hình khác ngoài hiện trường.
+- **Mở rộng dữ liệu & Data Augmentation:** Để mô hình học tổng quát hơn (*generalization*), nhóm đã tự thu thập ảnh đồng hồ nước thực tế tại Việt Nam, cắt lọc chính xác phần số và mở rộng tập gán nhãn với nhiều độ dài biến thiên linh hoạt từ **4 đến 8 chữ số** (`merge_recognition`). Đồng thời, các kỹ thuật tăng cường dữ liệu thực tế (biến dạng hình học, xoay góc nghiêng, nhiễu sáng, mờ bẩn bề mặt kính) được áp dụng để mô phỏng chính xác điều kiện làm việc của nhân viên ghi số.
+- **Tập kiểm thử độc lập sau Augmentation (`merge_recognition`):** Gồm **2,669 mẫu ảnh test** độc lập với nhãn đa dạng 4–8 chữ số. Cả 2 mô hình nhận diện ký tự cơ sở gồm **CRNN** (`models_baseline/crnn_after_aug`) và **Tesseract OCR fine-tuned LSTM** (`models_baseline/tesseract_after_aug`) đều được huấn luyện 200 epochs với cùng cấu hình siêu tham số và đánh giá theo chuẩn Levenshtein metrics.
+
+#### 📊 Bảng so sánh chỉ số OCR Baseline sau Data Augmentation (Tập Test: 2,669 mẫu):
+
+| Chỉ số Đánh giá | CRNN (`crnn_after_aug`) | Tesseract OCR (`tesseract_after_aug`) | Đánh giá & Chênh lệch |
+| :--- | :---: | :---: | :--- |
+| **Kiến trúc mô hình** | CNN + BiLSTM + CTC Loss | Tesseract 5 LSTM Engine (Fine-tuned 200 Epochs, PSM 7) | CRNN thiết kế chuyên biệt cho nhận diện chữ số thực tế |
+| **Số mẫu kiểm thử (Test Samples)** | **2,669** | **2,669** | Tập test thực tế nhãn đa dạng 4–8 chữ số |
+| **Sequence Accuracy** *(Toàn chuỗi đúng tuyệt đối)* | **87.94%** (0.8794) | **3.18%** (0.0318) | **CRNN vượt trội +84.76%** |
+| **Character Accuracy** *(Chính xác từng ký tự)* | **95.50%** (0.9550) | **19.89%** (0.1989) | **CRNN vượt trội +75.61%** |
+| **Precision** | **0.9623** (96.23%) | **0.6927** (69.27%) | CRNN nhận diện chuẩn xác, ít nhầm lẫn |
+| **Recall** | **0.9550** (95.50%) | **0.1989** (19.89%) | Tesseract bỏ sót nhiều ký tự do khoảng cách hẹp |
+| **F1-Score** | **0.9586** (95.86%) | **0.3090** (30.90%) | **CRNN cao hơn gấp 3.1 lần** |
+| **CER** *(Character Error Rate - càng thấp càng tốt)* | **4.77%** (0.0477) | **82.80%** (0.8280) | **CRNN giảm lỗi ký tự hơn 17.3 lần** |
+| **Tổng Edit Distance (Levenshtein)** | **682** | **11,838** | CRNN có độ lệch ký tự tổng thể cực thấp |
+| **Thời gian Test / Tốc độ suy luận** | ~2m 26s (**~54.7 ms/ảnh**) | ~12m 57s (**~291.1 ms/ảnh**) | **CRNN nhanh hơn ~5.3 lần** |
+
+#### 💡 Nhận định & Kết luận:
+1. **Khả năng tổng quát hóa của CRNN:** Khi dữ liệu được mở rộng nhãn biến thiên từ 4 đến 8 chữ số và chịu tác động của augmentation, CRNN vẫn duy trì độ chính xác ký tự ấn tượng **95.50%** và F1-score **95.86%**, với tỷ lệ lỗi CER chỉ **4.77%**. Điều này chứng minh mô hình đã học được đặc trưng ngữ cảnh chuỗi thay vì ghi nhớ độ dài cố định.
+2. **Hạn chế của Tesseract:** Dù được fine-tune LSTM 200 epochs theo đúng hướng dẫn chuẩn `tesstrain`, Tesseract chỉ đạt Sequence Accuracy **3.18%** và CER lên đến **82.80%**. Tesseract truyền thống được tối ưu cho tài liệu văn bản in phẳng, không thể thích ứng với phông chữ cơ học dập nổi trên bánh răng, viền số sát nhau và hiện tượng lóa sáng/đọng nước trên mặt đồng hồ.
+3. **Quyết định triển khai:** CRNN sau augmentation được tích hợp chính thức vào module AI Engine (`backend/app/services/ai_service.py`), kết hợp cùng mô hình phân đoạn YOLO11-seg để phục vụ tác nghiệp hiện trường thời gian thực.
 
 ---
 
