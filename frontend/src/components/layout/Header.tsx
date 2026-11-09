@@ -1,11 +1,12 @@
 import React from 'react';
-import { Bell, MapPin, Calendar, User, LogOut } from 'lucide-react';
+import { Bell, MapPin, Calendar, User, LogOut, Menu } from 'lucide-react';
 
 interface HeaderProps {
   currentRouteTitle?: string;
   billingPeriod?: string;
   currentUser?: { fullName: string; role: string } | null;
   onLogout?: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -13,15 +14,25 @@ export const Header: React.FC<HeaderProps> = ({
   billingPeriod = 'Kỳ 04/2025',
   currentUser,
   onLogout,
+  onToggleMobileMenu,
 }) => {
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-20">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 rounded-lg text-xs font-semibold border border-sky-100">
-          <MapPin className="w-3.5 h-3.5 text-sky-600" />
-          <span>{currentRouteTitle}</span>
+    <header className="h-16 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {onToggleMobileMenu && (
+          <button
+            onClick={onToggleMobileMenu}
+            className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            aria-label="Mở menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-sky-50 text-sky-700 rounded-lg text-[11px] sm:text-xs font-semibold border border-sky-100 max-w-[170px] sm:max-w-none truncate">
+          <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+          <span className="truncate">{currentRouteTitle}</span>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium">
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium">
           <Calendar className="w-3.5 h-3.5 text-slate-500" />
           <span>{billingPeriod}</span>
         </div>

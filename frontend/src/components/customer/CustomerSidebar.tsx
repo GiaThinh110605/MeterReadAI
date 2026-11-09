@@ -8,6 +8,7 @@ import {
   User,
   LogOut,
   Droplet,
+  X,
 } from 'lucide-react';
 
 export type CustomerTab =
@@ -22,28 +23,42 @@ interface CustomerSidebarProps {
   activeTab: CustomerTab;
   onTabChange: (tab: CustomerTab) => void;
   onLogout: () => void;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
   activeTab,
   onTabChange,
   onLogout,
+  isOpenMobile,
+  onCloseMobile,
 }) => {
   const isInvoiceActive = activeTab === 'invoices' || activeTab === 'payment';
 
-  return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between h-screen sticky top-0 shrink-0">
+  const sidebarContent = (
+    <div className="flex flex-col justify-between h-full bg-white">
       <div>
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-100">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-sky-700 flex items-center justify-center text-white shadow-sm shadow-sky-200">
-            <Droplet className="w-5 h-5 fill-white" />
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-sky-700 flex items-center justify-center text-white shadow-sm shadow-sky-200">
+              <Droplet className="w-5 h-5 fill-white" />
+            </div>
+            <div>
+              <h1 className="text-base font-bold text-sky-900 leading-none">WaterFlow</h1>
+              <p className="text-[10px] tracking-wider text-slate-400 font-semibold uppercase mt-0.5">
+                CỔNG KHÁCH HÀNG
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-base font-bold text-sky-900 leading-none">WaterFlow</h1>
-            <p className="text-[10px] tracking-wider text-slate-400 font-semibold uppercase mt-0.5">
-              CỔNG KHÁCH HÀNG
-            </p>
-          </div>
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="md:hidden p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <div className="p-4">
@@ -52,7 +67,10 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
           </p>
           <nav className="space-y-1">
             <button
-              onClick={() => onTabChange('overview')}
+              onClick={() => {
+                onTabChange('overview');
+                onCloseMobile?.();
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'overview'
                   ? 'bg-sky-600 text-white shadow-sm font-bold'
@@ -64,7 +82,10 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
             </button>
 
             <button
-              onClick={() => onTabChange('invoices')}
+              onClick={() => {
+                onTabChange('invoices');
+                onCloseMobile?.();
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 isInvoiceActive
                   ? 'bg-sky-600 text-white shadow-sm font-bold'
@@ -75,9 +96,11 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
               <span>Hóa đơn</span>
             </button>
 
-
             <button
-              onClick={() => onTabChange('history')}
+              onClick={() => {
+                onTabChange('history');
+                onCloseMobile?.();
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'history'
                   ? 'bg-sky-600 text-white shadow-sm font-bold'
@@ -89,7 +112,10 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
             </button>
 
             <button
-              onClick={() => onTabChange('meter-image')}
+              onClick={() => {
+                onTabChange('meter-image');
+                onCloseMobile?.();
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'meter-image'
                   ? 'bg-sky-600 text-white shadow-sm font-bold'
@@ -101,7 +127,10 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
             </button>
 
             <button
-              onClick={() => onTabChange('complaints')}
+              onClick={() => {
+                onTabChange('complaints');
+                onCloseMobile?.();
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'complaints'
                   ? 'bg-sky-600 text-white shadow-sm font-bold'
@@ -133,7 +162,26 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
           <span>Đăng xuất</span>
         </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col justify-between h-screen sticky top-0 shrink-0">
+        {sidebarContent}
+      </aside>
+
+      {isOpenMobile && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+            onClick={onCloseMobile}
+          />
+          <div className="relative w-72 max-w-[80vw] bg-white h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
-

@@ -28,6 +28,7 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
   const [invoices, setInvoices] = useState<CustomerInvoiceItem[]>([]);
   const [complaints, setComplaints] = useState<CustomerComplaintItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,12 +111,15 @@ export const CustomerPortalPage: React.FC<CustomerPortalPageProps> = ({
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onLogout={onLogout}
+        isOpenMobile={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
         <CustomerHeader
           customerName={overviewData.customerName || currentUser?.fullName || 'Khách hàng'}
           meterSerial={overviewData.meterSerial}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-8">

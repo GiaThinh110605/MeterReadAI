@@ -352,6 +352,20 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 2. **Hạn chế của Tesseract:** Dù được fine-tune LSTM 200 epochs theo đúng hướng dẫn chuẩn `tesstrain`, Tesseract chỉ đạt Sequence Accuracy **3.18%** và CER lên đến **82.80%**. Tesseract truyền thống được tối ưu cho tài liệu văn bản in phẳng, không thể thích ứng với phông chữ cơ học dập nổi trên bánh răng, viền số sát nhau và hiện tượng lóa sáng/đọng nước trên mặt đồng hồ.
 3. **Quyết định triển khai:** CRNN sau augmentation được tích hợp chính thức vào module AI Engine (`backend/app/services/ai_service.py`), kết hợp cùng mô hình phân đoạn YOLO11-seg để phục vụ tác nghiệp hiện trường thời gian thực.
 
+#### 📸 Hình ảnh Thử nghiệm Thực tế trên Website (Live Inference Demo):
+Hệ thống MeterReadAI & WaterFlow sau khi tích hợp toàn diện mô hình phân đoạn **YOLO11-seg** (`best.onnx`) và mô hình nhận diện chuỗi ký tự **CRNN sau Augmentation** (`best_model.pth`):
+- **Khả năng tổng quát hóa với độ dài lớn:** Nhận diện chuẩn xác các đồng hồ có cấu hình chữ số dài phức tạp (**8 chữ số**, ví dụ: `"00322032"` và `"00058235"`).
+- **Tuân thủ quy chuẩn nghiệp vụ:** Bảo toàn tuyệt đối các chữ số `0` ở đầu (`"00322032"` $\to$ $322.032 \text{ m}^3$, `"00058235"` $\to$ $58.235 \text{ m}^3$).
+- **Trải nghiệm thị giác tối ưu:** Vùng mặt số được đóng khung đa giác xanh nổi bật, nhãn AI được đưa lên góc hiển thị HUD thông minh và **hoàn toàn không che đè lên vùng chữ số thực tế**, giúp nhân viên ghi số dễ dàng quan sát và đối soát trực tiếp bằng mắt thường.
+
+<p align="center">
+  <img src="README_IMAGE/live_test_web_01.jpg" width="49%" alt="Thử nghiệm nhận diện thực tế đồng hồ 8 số 00322032 trên Web WaterFlow" />
+  <img src="README_IMAGE/live_test_web_02.jpg" width="49%" alt="Thử nghiệm nhận diện thực tế đồng hồ 8 số 00058235 trên Web WaterFlow" />
+</p>
+<p align="center">
+  <em>Hình 7.1: Giao diện thử nghiệm chạy thật trên website với mô hình YOLO11-seg và CRNN sau Augmentation nhận diện đồng hồ nước 8 chữ số</em>
+</p>
+
 ---
 
 ## 8. 🔬 Phân tích Lỗi Chuyên sâu (Error Analysis) & Động lực Cải tiến

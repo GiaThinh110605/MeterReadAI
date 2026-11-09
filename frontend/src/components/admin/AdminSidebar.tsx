@@ -8,7 +8,8 @@ import {
   AlertCircle,
   BarChart3,
   LogOut,
-  Activity
+  Activity,
+  X
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -17,6 +18,8 @@ interface AdminSidebarProps {
   onSwitchPortal?: (target: 'reader' | 'customer') => void;
   onLogout?: () => void;
   pendingComplaintsCount?: number;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -24,6 +27,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onTabChange,
   onLogout,
   pendingComplaintsCount = 0,
+  isOpenMobile,
+  onCloseMobile,
 }) => {
   const menuItems = [
     { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
@@ -40,19 +45,29 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'reports', label: 'Báo cáo', icon: BarChart3 },
   ];
 
-  return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between h-screen sticky top-0 shadow-sm shrink-0">
+  const sidebarContent = (
+    <div className="flex flex-col justify-between h-full bg-white">
       <div>
-        <div className="p-5 border-b border-slate-100 flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-            </svg>
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-bold text-slate-800 tracking-tight text-lg leading-tight">WaterFlow</div>
+              <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">CỔNG QUẢN TRỊ</div>
+            </div>
           </div>
-          <div>
-            <div className="font-bold text-slate-800 tracking-tight text-lg leading-tight">WaterFlow</div>
-            <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">CỔNG QUẢN TRỊ</div>
-          </div>
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="md:hidden p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <div className="p-4">
@@ -66,7 +81,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               return (
                 <button
                   key={item.id}
-                  onClick={() => onTabChange(item.id)}
+                  onClick={() => {
+                    onTabChange(item.id);
+                    onCloseMobile?.();
+                  }}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
@@ -113,7 +131,27 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </button>
         )}
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col justify-between h-screen sticky top-0 shadow-sm shrink-0">
+        {sidebarContent}
+      </aside>
+
+      {isOpenMobile && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+            onClick={onCloseMobile}
+          />
+          <div className="relative w-72 max-w-[80vw] bg-white h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

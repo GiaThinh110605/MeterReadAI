@@ -16,14 +16,12 @@ class Settings(BaseSettings):
     YOLO_MODEL_PATH: str = os.getenv(
         "YOLO_MODEL_PATH",
         str(
-            REPO_ROOT / "models_baseline/yolo11n-seg/word-wheel-water-meter/results/runs/segment/train/weights/best.pt"
-            if (REPO_ROOT / "models_baseline/yolo11n-seg/word-wheel-water-meter/results/runs/segment/train/weights/best.pt").exists()
-            else (REPO_ROOT / "enhanced_model/yolov11-asymmetric_inner_ciou/word_wheel_water_meter/best.pt")
+            REPO_ROOT / "enhanced_model/yolov11-asymmetric_inner_ciou/merge/best.onnx"
         )
     )
     CRNN_MODEL_PATH: str = os.getenv(
         "CRNN_MODEL_PATH",
-        str(REPO_ROOT / "models_baseline/crnn/results/weights/best_model.pth")
+        str(REPO_ROOT / "models_baseline/crnn_after_aug/best_model.pth")
     )
     
     SECRET_KEY: str = os.getenv("SECRET_KEY", "waterflow-meterreadai-secret-key-2025")
