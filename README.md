@@ -1,7 +1,7 @@
 # MeterReadAI — Hệ Thống Đọc Chỉ Số Đồng Hồ Nước & Quản Lý Tính Tiền Nước Tự Động
 
 <p align="center">
-  <img src="https://img.shields.io/badge/AI%20Vision-YOLO11--seg%20%2B%20CoordAtt-007ACC?style=for-the-badge&logo=python&logoColor=white" alt="YOLO11" />
+  <img src="https://img.shields.io/badge/AI%20Vision-YOLO11--seg%20%2B%20C3k2Star-007ACC?style=for-the-badge&logo=python&logoColor=white" alt="YOLO11" />
   <img src="https://img.shields.io/badge/UI%20Design-Google%20Stitch%20(19%20Screens)-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Stitch" />
   <img src="https://img.shields.io/badge/Frontend-React%2018%20%2B%20TypeScript%20%2B%20Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
   <img src="https://img.shields.io/badge/Backend-FastAPI%20%2B%20SQLAlchemy%202.0-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
@@ -11,7 +11,7 @@
 **MeterReadAI & WaterFlow** là giải pháp toàn diện kết hợp công nghệ **Thị giác Máy tính Hiện đại (Instance Segmentation & OCR)** với **Hệ thống Quản lý và Tính tiền nước tự động**. Dự án giải quyết trọn vẹn từ bài toán nhận diện tự động vùng mặt số và chỉ số đồng hồ nước thực tế tại Việt Nam đến quy trình vận hành tuyến đọc, lập hóa đơn bậc thang có bảo toàn snapshot minh bạch và cổng tra cứu dịch vụ cho khách hàng.
 
 - 🎨 **Nguyên mẫu UI hoàn chỉnh (Google Stitch)**: [https://stitch.withgoogle.com/projects/3346993615529581711](https://stitch.withgoogle.com/projects/3346993615529581711)
-- 🚀 **Nhánh mô hình cải tiến**: `coordinate` (YOLO11n-seg tích hợp Coordinate Attention)
+- 🚀 **Mô hình cải tiến cốt lõi**: `c3k2stars` (YOLO11n-seg tích hợp StarNet C3k2_Star tại P3) & `asymmetric-inner-ciou`
 
 ---
 
@@ -26,6 +26,7 @@
   - [3.3. Ứng dụng Di động Nhân viên Ghi số (Meter Reader Mobile App)](#33-ứng-dụng-di-động-nhân-viên-ghi-số-meter-reader-mobile-app)
   - [3.4. Hệ thống Quản trị & Điều hành Doanh nghiệp (Admin Portal)](#34-hệ-thống-quản-trị--điều-hành-doanh-nghiệp-admin-portal)
 - [4. 📊 Tổng quan Dataset](#4--tổng-quan-dataset)
+  - [4.1. Bộ Dữ liệu Nhận diện Chữ số Đồng hồ Nước (OCR / Digit Datasets)](#41-bộ-dữ-liệu-nhận-diện-chữ-số-đồng-hồ-nước-ocr--digit-datasets)
 - [5. 🔍 Khám phá & Đánh giá Dữ liệu (EDA)](#5--khám-phá--đánh-giá-dữ-liệu-eda)
 - [6. 🛠️ Tiền xử lý & Trực quan hóa Dữ liệu](#6-️-tiền-xử-lý--trực-quan-hóa-dữ-liệu)
 - [7. 🏆 Báo cáo Kết quả Đánh giá Mô hình Cơ sở (Baseline Models)](#7--báo-cáo-kết-quả-đánh-giá-mô-hình-cơ-sở-baseline-models)
@@ -33,7 +34,7 @@
 - [9. 🚀 Kiến trúc Mô hình YOLO11 & Các Giải pháp Cải tiến (Enhanced Models)](#9--kiến-trúc-mô-hình-yolo11--các-giải-pháp-cải-tiến-enhanced-models)
   - [9.1. Tổng quan Kiến trúc YOLOv11](#91-tổng-quan-kiến-trúc-yolov11)
   - [9.2. Lý do Nhóm Lựa chọn YOLO11 làm Mô hình Chủ đạo](#92-lý-do-nhóm-lựa-chọn-yolo11-làm-mô-hình-chủ-đạo)
-  - [9.3. Các Phương pháp Cải tiến Đột phá (CoordAtt, Inner-CIoU, Inner-SIoU, Asymmetric Inner-CIoU)](#93-các-phương-pháp-cải-tiến-đột-phá-coordatt-inner-ciou-inner-siou-asymmetric-inner-ciou)
+  - [9.3. Các Phương pháp Cải tiến Đột phá (C3k2_Star, Inner-CIoU, Inner-SIoU, Asymmetric Inner-CIoU)](#93-các-phương-pháp-cải-tiến-đột-phá-c3k2_star-inner-ciou-inner-siou-asymmetric-inner-ciou)
   - [9.4. Bảng So sánh Hiệu năng Toàn diện: Baseline vs. Các Mô hình Cải tiến](#94-bảng-so-sánh-hiệu-năng-toàn-diện-baseline-vs-các-mô-hình-cải-tiến)
   - [9.5. Đánh giá Tổng kết & Định hướng Ứng dụng Thực tế](#95-đánh-giá-tổng-kết--định-hướng-ứng-dụng-thực-tế)
 - [10. 💻 Hướng dẫn Cài đặt & Huấn luyện Mô hình Cải tiến](#10--hướng-dẫn-cài-đặt--huấn-luyện-mô-hình-cải-tiến)
@@ -95,7 +96,9 @@ Cấu trúc thực thể và quan hệ cơ sở dữ liệu được chuẩn hó
 2. **Crawl ảnh tự động**: Sử dụng script [`crawl_dataset/crawl_data.py`](crawl_dataset/crawl_data.py) kết hợp thư viện `ddgs`, tự động lọc kích thước tối thiểu, loại bỏ ảnh định dạng lạ và kiểm tra magic bytes.
 3. **Lọc dữ liệu**: Thu thập hơn 2.500+ ảnh đại diện cho đồng hồ nước tại Việt Nam, loại bỏ các ảnh không có mặt số hoặc trùng lặp MD5 hash.
 4. **Gán nhãn bằng Labelme**: Gán nhãn polygon chi tiết vùng mặt số (`reading_region`) và từng chữ số bánh răng.
-5. **Kiểm tra chéo (Cross-check)**: Rà soát nhãn giữa các thành viên, loại bỏ bounding box lỗi và xuất ra định dạng chuẩn YOLO Segmentation format.
+   - 📂 [Google Drive - Tập ảnh DuckDuckGo & Gán nhãn nhận diện chữ số](https://drive.google.com/drive/folders/1_X-YEpZXvZ0kf4587wA0HyydjVwBagxR?usp=sharing): Bộ ảnh thu thập thực tế tại Việt Nam qua DuckDuckGo kèm nhãn polygon cho bài toán nhận diện chỉ số.
+   - 📂 [Google Drive - Tập gán nhãn nhận diện chữ số từ dataset ban đầu](https://drive.google.com/drive/folders/1NOSI8uuBCsmmhvh0fjHcnblbG5Q43TGB?usp=sharing): Nhãn chữ số chi tiết được nhóm thực hiện từ các bộ dữ liệu ban đầu để phục vụ huấn luyện nhận diện ký tự số.
+5. **Kiểm tra chéo (Cross-check) & Trích xuất (Cropping Pipeline)**: Rà soát nhãn giữa các thành viên, loại bỏ bounding box lỗi và xuất ra định dạng chuẩn YOLO Segmentation format cũng như tập dữ liệu nhận diện ký tự số OCR ([`data_1`](data/data_1), [`data_2`](data/data_2)) theo kích thước chuẩn `(60, 200, 3)`.
 
 <p align="center">
   <img src="README_IMAGE/crawl_and_label_data.png" width="85%" alt="Quy trình Crawl và Label Data" />
@@ -196,6 +199,14 @@ Dự án tổng hợp và chuẩn hóa 3 tập dữ liệu đồng hồ nước 
 | **Word-Wheel (D2)** | [Dryad Repository](https://datadryad.org/dataset/doi:10.5061/dryad.7d7wm3860) | 46,097 *(gốc: 46,098)* | 29,436 / 3,270 / 13,391 | PNG → JPEG + Segmentation masks |
 | **OCR Water Meter (D4)** | [Roboflow Universe](https://universe.roboflow.com/traffic-zcg6o/ocr-water-meters/dataset/2) | 10,598 | 9,273 / 880 / 445 | JPEG + YOLO polygon labels (digits) |
 | **Merge-Dataset (D1)** | *Kết hợp D2 + D3 + D4* | **57,939** | **39,704 / 4,274 / 13,961** | YOLO polygon format (16,247 test instances) |
+
+### 4.1. Bộ Dữ liệu Nhận diện Chữ số Đồng hồ Nước (OCR / Digit Datasets)
+Phục vụ bài toán cắt lọc vùng mặt số (`reading_region`) và nhận diện chuỗi chữ số bánh răng chuẩn kích thước `(H=60, W=200)`:
+
+| Dataset | Mô tả & Nguồn gốc | Số lượng ảnh | Phân chia (Train / Val / Test) | Link Google Drive |
+| :--- | :--- | :--- | :--- | :--- |
+| **`data_1` (DuckDuckGo)** | Ảnh thu thập thực tế tại Việt Nam qua DuckDuckGo và gán nhãn nhận diện chữ số | 239 | 191 / 23 / 25 | [Google Drive - DuckDuckGo Dataset](https://drive.google.com/drive/folders/1_X-YEpZXvZ0kf4587wA0HyydjVwBagxR?usp=sharing) |
+| **`data_2` (Base Datasets)** | Dữ liệu gán nhãn nhận diện chữ số từ các tập dataset ban đầu (`ocr_water_meter` & `water_meters`) | 1,498 | 473 / 780 / 245 | [Google Drive - Base Datasets OCR Labels](https://drive.google.com/drive/folders/1NOSI8uuBCsmmhvh0fjHcnblbG5Q43TGB?usp=sharing) |
 
 ---
 
@@ -344,7 +355,7 @@ Nhóm đã sử dụng ma trận phân tích lỗi dự đoán (Prediction Error
    - Các cơ chế chú ý kênh truyền thống như **Squeeze-and-Excitation (SE)** nén toàn bộ không gian 2D thành một vector $1 \times 1 \times C$, vô tình làm **mất hoàn toàn tọa độ vị trí không gian** (spatial position).
    - Cơ chế Spatial Attention truyền thống (như trong CBAM) chỉ tính toán vùng cục bộ mà không nắm bắt được mối tương quan tầm xa dọc theo hàng chữ số ngang.
 3. **Giải pháp đột phá**:
-   - Cần một cơ chế chú ý có khả năng phân tách độc lập hướng **Ngang ($X$)** và hướng **Dọc ($Y$)** để định vị chính xác tọa độ từng chữ số trên hàng ngang mà vẫn giữ chi phí tính toán cực nhẹ. Đó chính là **Coordinate Attention (CoordAtt)**.
+   - Cần một kiến trúc trích xuất đặc trưng có khả năng ánh xạ không gian vô hạn chiều tại tầng P3 (nguồn đặc trưng số nhỏ) với chi phí tính toán cực nhẹ (**C3k2_Star - StarNet CVPR 2024**), kết hợp với các hàm mất mát bounding box thích ứng hình học dẹp ngang (**Inner-CIoU, Inner-SIoU, Asymmetric Inner-CIoU**).
 
 ---
 
@@ -384,14 +395,14 @@ Sau khi đối chiếu kết quả thực nghiệm giữa các họ mô hình:
 
 ---
 
-### 9.3. Các Phương pháp Cải tiến Đột phá (CoordAtt, Inner-CIoU, Inner-SIoU, Asymmetric Inner-CIoU)
+### 9.3. Các Phương pháp Cải tiến Đột phá (C3k2_Star, Inner-CIoU, Inner-SIoU, Asymmetric Inner-CIoU)
 
 Nhóm đã nghiên cứu và triển khai **4 giải pháp cải tiến chuyên sâu** nhắm thẳng vào các bài toán hóc búa của đồng hồ nước (hộp số chữ nhật dẹp, chữ số micro-scale, xoay góc nghiêng và nhiễu phản xạ):
 
-#### 1. Coordinate Attention (CoordAtt) — Cải tiến Kiến trúc Neck
-- **Nguyên lý**: Phân rã Global Average Pooling 2D thành hai phép pooling 1D theo trục ngang ($W$) và dọc ($H$):
-  $$z_c^h(h) = \frac{1}{W} \sum_{0 \le i < W} x_c(h, i), \quad z_c^w(w) = \frac{1}{H} \sum_{0 \le j < H} x_c(j, w)$$
-- **Tác dụng**: Giúp mô hình định vị chính xác vị trí hàng ngang của từng chữ số mà không bị lẫn lộn giữa các bánh răng liền kề, giảm triệt để lỗi *Localization (Loc)* và *False Negatives (FN)* trên tập D4.
+#### 1. C3k2_Star (StarNet CVPR 2024) — Cải tiến Kiến trúc Backbone tại P3
+- **Nguyên lý**: Kế thừa khối StarBlock từ công trình *"Rewrite the Stars"* (CVPR 2024), thay thế các khối Bottleneck chuẩn trong C3k2 tại tầng trích xuất P3/8 (nơi bắt đầu các đặc trưng ký tự và viền số). Khối áp dụng tích chập sâu Depthwise $7 \times 7$ và **phép nhân sao (Star Operation)** giữa hai nhánh chiếu $f_1, f_2$:
+  $$\text{StarBlock}(x) = \text{DWConv}_2\Big(g\big(\text{ReLU6}(f_1(x)) \odot f_2(x)\big)\Big) + x$$
+- **Tác dụng**: Phép nhân theo từng phần tử (element-wise multiplication) ánh xạ đặc trưng sang không gian số chiều vô hạn (implicit high-dimensional space) tương tự Self-Attention nhưng độ phức tạp tuyến tính $\mathcal{O}(N)$ thay vì $\mathcal{O}(N^2)$. Giúp bám sát đường viền đa giác cực mịn (Mask mAP50-95 tăng từ 88.7% lên **89.5%**), đồng thời bứt phá tốc độ suy luận từ 75.6 lên **118.7 FPS (+56.9% throughput)**.
 
 #### 2. Inner-CIoU Loss — Đột phá Hàm Mất mát với Hộp Phụ trợ
 - **Nguyên lý**: Đưa vào hộp phụ trợ (Auxiliary Bounding Box) có tỷ lệ $\text{ratio} < 1.0$ đồng tâm với hộp gốc:
@@ -415,25 +426,24 @@ Kết quả đánh giá độc lập trên tập kiểm thử (Test Split) với
 #### 1. Trên tập OCR Water Meter (D4 — 445 ảnh test, 2,731 instances ký tự chữ số nhỏ):
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.985 | **0.578** | 0.827 | **0.311** | 0.9699 | 9.20 ms | 108.67 |
-| **CoordAtt (Cải tiến)** | 135 | 2.86M | 9.7 | **0.986** | 0.568 | **0.834** | 0.306 | **0.9710** | 9.39 ms | 106.54 |
+| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | **0.985** | **0.578** | 0.827 | **0.311** | **0.9699** | 9.20 ms | 108.67 |
+| **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | 0.984 | 0.571 | **0.832** | 0.306 | 0.9675 | 9.56 ms | 104.55 |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.984 | 0.572 | 0.830 | 0.308 | 0.9689 | 8.78 ms | 113.85 |
-| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.984 | 0.576 | 0.833 | 0.307 | 0.9691 | **8.65 ms** | **115.59** |
+| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.984 | 0.576 | **0.833** | 0.307 | 0.9691 | **8.65 ms** | **115.59** |
 
 #### 2. Trên tập Water Meters (D3 — 125 ảnh test vùng mặt số đồng hồ):
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | 0.947 | 0.995 | 0.887 | 0.9943 | 13.22 ms | 75.63 |
-| **CoordAtt (Cải tiến)** | 135 | 2.86M | 9.7 | 0.995 | 0.903 | 0.995 | 0.879 | 0.9956 | 14.03 ms | 71.28 |
+| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | **0.947** | 0.995 | 0.887 | 0.9943 | 13.22 ms | 75.63 |
+| **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | 0.995 | 0.945 | 0.995 | **0.895** | 0.9948 | **8.43 ms** | **118.67** |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.926 | 0.995 | 0.887 | 0.9956 | 10.25 ms | 97.52 |
-| **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.940 | 0.995 | **0.893** | 0.9920 | 12.53 ms | 79.80 |
-| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | **0.945** | **0.995** | 0.892 | **0.9958** | **12.94 ms** | **77.26** |
+| **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.940 | 0.995 | 0.893 | 0.9920 | 12.53 ms | 79.80 |
+| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | 0.945 | **0.995** | 0.892 | **0.9958** | 12.94 ms | 77.26 |
 
 #### 3. Trên tập Word-Wheel Water Meter (D2 — 13,391 ảnh test vùng bánh xe số):
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | 0.813 | 0.995 | 0.743 | 0.9997 | 6.97 ms | 143.40 |
-| **CoordAtt (Cải tiến)** | 135 | 2.86M | 9.7 | 0.995 | 0.811 | 0.995 | 0.739 | 0.9996 | 8.44 ms | 118.49 |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | **0.815** | 0.995 | 0.742 | 0.9996 | 8.16 ms | 122.53 |
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | **0.815** | 0.995 | **0.743** | **0.9998** | 8.19 ms | 122.17 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.995 | 0.814 | 0.995 | 0.742 | 0.9995 | 9.03 ms | 110.73 |
@@ -442,44 +452,42 @@ Kết quả đánh giá độc lập trên tập kiểm thử (Test Split) với
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | **0.784** | 0.983 | **0.690** | 0.9939 | 6.93 ms | 144.25 |
-| **CoordAtt (Cải tiến)** | 135 | 2.86M | 9.7 | 0.995 | 0.778 | 0.983 | 0.683 | 0.9932 | 8.43 ms | 118.62 |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.781 | 0.983 | 0.684 | 0.9939 | 8.15 ms | 122.67 |
+| **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.781 | 0.983 | 0.687 | 0.9939 | 7.40 ms | 135.07 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | 0.782 | **0.983** | 0.688 | **0.9946** | **7.80 ms** | **128.14** |
 
 ---
 
 ### 9.5. Đánh giá Tổng kết & Định hướng Ứng dụng Thực tế
 
-1. **Khả năng phân đoạn ký tự nhỏ (D4 OCR)**:  
-   - **CoordAtt** mang lại hiệu quả vượt trội nhất trên bài toán phân đoạn chữ số công tơ với **Mask mAP50 tăng từ 0.827 lên 0.834 (+0.7%)** và **F1-Score cao nhất đạt 0.9710**. Việc mã hóa tọa độ 2 trục giúp mô hình khoanh vùng dứt khoát ranh giới giữa 2 con số liền nhau, giải quyết triệt để bài toán số bị dính hoặc bóng gương.
+1. **Khả năng phân đoạn viền & tối ưu tốc độ (C3k2_Star trên D3 & D4)**:  
+   - **C3k2_Star (StarNet CVPR 2024)** mang lại bước nhảy vọt về chất lượng phân đoạn đường viền mặt số trên D3 với **Mask mAP50-95 tăng từ 0.887 lên 0.895 (+0.8%)**, F1-score đạt **0.9948** và tốc độ tăng tốc ấn tượng lên **118.67 FPS (+56.9% throughput)**. Trên tập ký tự nhỏ D4, phép nhân sao giúp tăng Mask Precision ($0.874 \to 0.878$) và Mask mAP50 ($0.827 \to 0.832$), tách rõ các nét số liền kề.
 2. **Khả năng định vị hình học bất đối xứng & tốc độ (D1, D3)**:  
    - **Asymmetric Inner-CIoU** đạt độ chính xác Box mAP50-95 cao nhất trên D3 (**0.945**) và F1-Score cao nhất trên D1 (**0.9946**). Lợi thế lớn nhất của phương pháp này là **hoàn toàn zero parameter overhead** trong pha inference, đạt tốc độ suy luận cực nhanh **115 - 128 FPS** (chỉ 7.8 - 8.6 ms/ảnh).
-3. **Mô hình tích hợp vào hệ thống Web & Mobile**:  
-   - Trọng số tối ưu từ nhánh [`enhanced_model/yolo11-coord/ocr-water-meter/best.pt`](enhanced_model/yolo11-coord/ocr-water-meter/best.pt) và [`enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt`](enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt) được nạp trực tiếp vào backend FastAPI (`ReadingService`) để xử lý ảnh hiện trường theo thời gian thực.
+3. **Khả năng bao phủ toàn diện & chống lệch góc (Inner-SIoU trên D2 & D3)**:  
+   - **Inner-SIoU** loại bỏ hoàn toàn hiện tượng bỏ sót đồng hồ trên D3 với **Recall đạt 1.000 (100% bắt trọn vẹn)**, đồng thời cải thiện độ chi tiết đường viền **Mask mAP50-95 lên 0.893 (+0.6%)**. Trên tập D2 bánh xe số, cơ chế phạt góc xoay (Angle Cost) giúp mô hình đạt F1-Score gần như tuyệt đối **0.9998** và Box mAP50-95 đạt **0.815 (+0.2%)**.
+4. **Mô hình tích hợp vào hệ thống Web & Mobile**:  
+   - Trọng số tối ưu từ các nhánh thực nghiệm hàng đầu [`enhanced_model/yolo11-c3k2stars/water-meters/best.pt`](enhanced_model/yolo11-c3k2stars/water-meters/best.pt), [`enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt`](enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt) và [`enhanced_model/yolo11-innersiou/water-meters/best.pt`](enhanced_model/yolo11-innersiou/water-meters/best.pt) được nạp trực tiếp vào backend FastAPI (`ReadingService`) để xử lý ảnh hiện trường theo thời gian thực.
    - Tài liệu kỹ thuật chi tiết của toàn bộ mô hình cải tiến được lưu trữ độc lập tại [`enhanced_model/README.md`](enhanced_model/README.md).
 
 ---
 
 ## 10. 💻 Hướng dẫn Cài đặt & Huấn luyện Mô hình Cải tiến
 
-Nhóm đã đóng gói toàn bộ mã nguồn mô-đun nơ-ron `CoordAtt` và cấu hình YAML trong nhánh git `coordinate`. Dưới đây là các bước tái lập và huấn luyện mô hình:
+Nhóm đã đóng gói toàn bộ mã nguồn cải tiến `C3k2_Star` và cấu hình YAML trong thư mục [`enhanced_model/yolo11-c3k2stars`](enhanced_model/yolo11-c3k2stars). Dưới đây là các bước tái lập và huấn luyện mô hình:
 
 ### 10.1. Cài đặt Môi trường (Local / Kaggle / Google Colab)
 
 ```bash
-# 1. Clone mã nguồn kho lưu trữ nhánh coordinate
-git clone -b coordinate https://github.com/GiaThinh110605/MeterReadAI.git
-cd MeterReadAI/ultralytics
-
-# 2. Cài đặt thư viện ultralytics ở chế độ có thể chỉnh sửa (editable mode)
-pip install -e .
+# 1. Cài đặt Ultralytics
+pip install ultralytics
 ```
 
 ### 10.2. Cấu hình Dữ liệu (`data.yaml`)
 
 Tạo tệp cấu hình đường dẫn dataset (ví dụ trên Kaggle):
 ```yaml
-path: /kaggle/input/datasets/lmgiathnh/ocr-water-meter/ocr_water_meter
+path: /kaggle/input/datasets/lmgiathnh/water-meters/water_meters
 train: images/train
 val: images/val
 test: images/test
@@ -493,8 +501,8 @@ names:
 ```python
 from ultralytics import YOLO
 
-# Khởi tạo mô hình với file cấu hình cải tiến YOLO11n-seg-coordatt
-model = YOLO('ultralytics/cfg/models/11/yolo11n-seg-coordatt.yaml')
+# Khởi tạo mô hình với file cấu hình cải tiến YOLO11n-seg-star-p3
+model = YOLO('yolo11n-seg-star-p3.yaml')
 
 # Tải trọng số pre-trained của YOLO11n-seg gốc để chuyển giao tri thức (Transfer Learning)
 model.load('yolo11n-seg.pt')
@@ -507,10 +515,10 @@ results = model.train(
     batch=16,
     device=0,
     workers=4,
-    optimizer='SGD',
-    lr0=0.01,
+    optimizer='AdamW',
+    lr0=0.001,
     project='runs/segment',
-    name='train_coordatt'
+    name='train_c3k2star'
 )
 ```
 
@@ -520,7 +528,7 @@ results = model.train(
 from ultralytics import YOLO
 
 # Tải mô hình có trọng số tốt nhất sau khi huấn luyện
-model = YOLO('runs/segment/train_coordatt/weights/best.pt')
+model = YOLO('runs/segment/train_c3k2star/weights/best.pt')
 
 # Đánh giá trên tập kiểm thử độc lập (test split)
 metrics = model.val(data='data.yaml', split='test')
@@ -537,9 +545,15 @@ print(f"🎭 Mask mAP50: {metrics.seg.map50:.4f}")
 - 📁 **Thư mục lưu trữ trọng số & tài liệu chuyên sâu**:
   - 📘 [Tài liệu & Đánh giá Toàn diện 4 Mô hình Cải tiến (`enhanced_model/README.md`)](enhanced_model/README.md)
   - 📙 [Tài liệu & Báo cáo Thực nghiệm Baseline YOLOE-26n-seg (`models_baseline/yoloe-26n-seg/README.md`)](models_baseline/yoloe-26n-seg/README.md)
-  - Trọng số mô hình cải tiến D4: [`enhanced_model/yolo11-coord/ocr-water-meter/best.pt`](enhanced_model/yolo11-coord/ocr-water-meter/best.pt)
-  - Trọng số mô hình cải tiến D3: [`enhanced_model/yolo11-coord/water-meters/best.pt`](enhanced_model/yolo11-coord/water-meters/best.pt)
-- ☁️ **Kho dữ liệu đám mây (Google Drive)**: [Google Drive Data Backup](https://drive.google.com/drive/u/0/folders/18UMXLWPYnHTnGbjmwSutPuWjKZCHdXMW)
+  - Trọng số mô hình cải tiến C3k2_Star D4: [`enhanced_model/yolo11-c3k2stars/ocr-water-meter/best.pt`](enhanced_model/yolo11-c3k2stars/ocr-water-meter/best.pt)
+  - Trọng số mô hình cải tiến C3k2_Star D3: [`enhanced_model/yolo11-c3k2stars/water-meters/best.pt`](enhanced_model/yolo11-c3k2stars/water-meters/best.pt)
+  - Trọng số mô hình cải tiến Inner-SIoU D3 (100% Recall): [`enhanced_model/yolo11-innersiou/water-meters/best.pt`](enhanced_model/yolo11-innersiou/water-meters/best.pt)
+  - Trọng số mô hình cải tiến Inner-SIoU D2 (0.9998 F1): [`enhanced_model/yolo11-innersiou/word_wheel_water_meter/best.pt`](enhanced_model/yolo11-innersiou/word_wheel_water_meter/best.pt)
+  - Trọng số mô hình cải tiến Inner-SIoU D1: [`enhanced_model/yolo11-innersiou/merge/best.pt`](enhanced_model/yolo11-innersiou/merge/best.pt)
+- ☁️ **Kho dữ liệu đám mây (Google Drive)**:
+  - 📦 [Google Drive Data Backup (Tổng hợp)](https://drive.google.com/drive/u/0/folders/18UMXLWPYnHTnGbjmwSutPuWjKZCHdXMW)
+  - 🦆 [Google Drive - Ảnh DuckDuckGo & Gán nhãn nhận diện chữ số (`data_1`)](https://drive.google.com/drive/folders/1_X-YEpZXvZ0kf4587wA0HyydjVwBagxR?usp=sharing)
+  - 🏷️ [Google Drive - Gán nhãn nhận diện chữ số từ dataset ban đầu (`data_2`)](https://drive.google.com/drive/folders/1NOSI8uuBCsmmhvh0fjHcnblbG5Q43TGB?usp=sharing)
 - 📌 **Quy chuẩn mã nguồn**: Tuân thủ chuẩn lập trình sạch (Clean Code), TDD với `pytest`, cơ sở dữ liệu tuân thủ chuẩn ACID với SQLite WAL mode, và giao diện chuẩn xác nguyên mẫu Google Stitch.
 
 ---
