@@ -7,7 +7,11 @@ import {
   CheckCircle2,
   Lock,
   Clock,
-  UserCheck
+  UserCheck,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  X
 } from 'lucide-react';
 import { api } from '../services/api';
 import { MeterItem, TariffCalculation } from '../types';
@@ -48,6 +52,7 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
   const [tariffData, setTariffData] = useState<TariffCalculation | null>(null);
   const [showAbnormalModal, setShowAbnormalModal] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isMobileListOpen, setIsMobileListOpen] = useState<boolean>(false);
 
   useEffect(() => {
     api.getRouteMeters(routeId).then((data) => {
@@ -240,6 +245,160 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
   ).length;
   const progressPercent = totalMetersCount > 0 ? Math.round((recordedMetersCount / totalMetersCount) * 100) : 0;
 
+  const currentMeterIndexInList = filteredMeters.findIndex((m) => m.id === selectedMeter?.id);
+  const handlePrevMeter = () => {
+    if (currentMeterIndexInList > 0) {
+      handleSelectMeter(filteredMeters[currentMeterIndexInList - 1]);
+    }
+  };
+  const handleNextMeter = () => {
+    if (currentMeterIndexInList < filteredMeters.length - 1) {
+      handleSelectMeter(filteredMeters[currentMeterIndexInList + 1]);
+    }
+  };
+
+  const renderMeterListContent = (isMobileSheet = false) => (
+    <div className="space-y-4">
+      {isMobileSheet && (
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Danh sách điểm đo trên tuyến</h3>
+            <p className="text-[11px] text-slate-500">Chọn đồng hồ để ghi nhận chỉ số</p>
+          </div>
+          <button
+            onClick={() => setIsMobileListOpen(false)}
+            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            TIẾN ĐỘ KỲ 04/2025
+          </span>
+          <span className="font-extrabold text-sky-900">{progressPercent}%</span>
+        </div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-2xl font-black text-sky-950">{recordedMetersCount} <span className="text-xs font-bold text-slate-400">/ {totalMetersCount} hộ</span></span>
+          <span className="text-[11px] font-semibold text-slate-500">Hoàn tất tuyến</span>
+        </div>
+        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-2 flex">
+          <div className="bg-sky-600" style={{ width: `${progressPercent}%` }} />
+        </div>
+      </div>
+
+      {/* Search Box */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Tìm số nhà, mã ĐH, tên KH..."
+          className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+        />
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-1.5 p-1 bg-slate-100/70 rounded-xl text-[11px] font-bold">
+        <button
+          onClick={() => setFilterTab('ALL')}
+          className={`flex-1 py-1.5 rounded-lg transition-all ${
+            filterTab === 'ALL' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Tất cả ({totalMetersCount})
+        </button>
+        <button
+          onClick={() => setFilterTab('PENDING')}
+          className={`flex-1 py-1.5 rounded-lg transition-all ${
+            filterTab === 'PENDING' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Chưa ghi ({pendingMetersCount})
+        </button>
+        <button
+          onClick={() => setFilterTab('RECORDED')}
+          className={`flex-1 py-1.5 rounded-lg transition-all ${
+            filterTab === 'RECORDED' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Đã ghi ({recordedMetersCount})
+        </button>
+      </div>
+
+      {/* Meter List */}
+      <div className={`space-y-2 overflow-y-auto pr-1 custom-scrollbar ${isMobileSheet ? 'max-h-[60vh]' : 'max-h-[560px]'}`}>
+        {filteredMeters.map((meter) => {
+          const isSelected = meter.id === selectedMeter?.id;
+          const isRecorded = meter.readingStatus === 'RECORDED';
+          const isLocked = meter.readingStatus === 'LOCKED';
+
+          return (
+            <div
+              key={meter.id}
+              onClick={() => {
+                handleSelectMeter(meter);
+                if (isMobileSheet) setIsMobileListOpen(false);
+              }}
+              className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                isSelected
+                  ? 'bg-sky-50/90 border-sky-400 shadow-sm ring-1 ring-sky-300'
+                  : 'bg-white border-slate-200/80 hover:border-slate-300 active:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-900 truncate">{meter.customerName}</h4>
+                <div className="flex items-center gap-1">
+                  {isSelected && (
+                    <span className="px-1.5 py-0.5 bg-sky-200 text-sky-900 text-[9px] font-extrabold rounded">
+                      ĐANG CHỌN
+                    </span>
+                  )}
+                  {isRecorded ? (
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Đã ghi
+                    </span>
+                  ) : isLocked ? (
+                    <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-[10px] font-extrabold rounded-full flex items-center gap-1">
+                      <Lock className="w-3 h-3" />
+                      Khóa cửa
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-semibold rounded-full">
+                      Chưa ghi
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-500 mt-0.5 truncate">{meter.address}</p>
+
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2 font-medium">
+                <span>MĐH: <strong className="text-slate-600">{meter.meterCode}</strong></span>
+                {isRecorded ? (
+                  <span className="text-emerald-700 font-extrabold">{meter.currentIndex?.toLocaleString('vi-VN')} m³</span>
+                ) : isLocked ? (
+                  <span className="text-rose-600 font-semibold">{meter.notes}</span>
+                ) : (
+                  <span>Kỳ trước: {meter.previousIndex} m³</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-400 font-medium">
+        {pendingMetersCount} điểm đo còn lại trong ca • <strong>Tự động chuyển tiếp khi lưu</strong>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-4 lg:p-6 max-w-[1600px] mx-auto space-y-4">
       {/* Toast Notification */}
@@ -284,129 +443,61 @@ export const MeterReadingPage: React.FC<MeterReadingPageProps> = ({ routeId, onB
         </button>
       </div>
 
+      {/* Mobile Quick Selector Bar */}
+      <div className="lg:hidden bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between gap-2">
+        <button
+          onClick={handlePrevMeter}
+          disabled={currentMeterIndexInList <= 0}
+          className="p-2.5 rounded-xl border border-slate-200 text-slate-700 disabled:opacity-30 active:bg-slate-100 shrink-0"
+          title="Đồng hồ trước"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => setIsMobileListOpen(true)}
+          className="flex-1 flex flex-col items-center text-center px-2 py-1 active:bg-slate-50 rounded-xl overflow-hidden"
+        >
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 truncate max-w-full">
+            <span className="text-sky-600 font-mono shrink-0">[{currentMeterIndexInList + 1}/{filteredMeters.length}]</span>
+            <span className="truncate">{selectedMeter?.customerName}</span>
+          </div>
+          <span className="text-[10px] text-slate-500 truncate max-w-full">
+            {selectedMeter?.address}
+          </span>
+          <span className="text-[9px] font-extrabold text-sky-600 uppercase tracking-wider mt-0.5">
+            ▼ Chạm để mở danh sách ({filteredMeters.length})
+          </span>
+        </button>
+
+        <button
+          onClick={handleNextMeter}
+          disabled={currentMeterIndexInList >= filteredMeters.length - 1}
+          className="p-2.5 rounded-xl border border-slate-200 text-slate-700 disabled:opacity-30 active:bg-slate-100 shrink-0"
+          title="Đồng hồ tiếp theo"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Mobile Bottom Sheet for Meter List */}
+      {isMobileListOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => setIsMobileListOpen(false)}
+          />
+          <div className="relative bg-white rounded-t-3xl p-5 shadow-2xl z-10 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+            {renderMeterListContent(true)}
+          </div>
+        </div>
+      )}
+
       {/* 3-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column: Route list & meter search (4 cols) */}
-        <div className="lg:col-span-3 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-4">
-          <div>
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                TIẾN ĐỘ KỲ 04/2025
-              </span>
-              <span className="font-extrabold text-sky-900">{progressPercent}%</span>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-black text-sky-950">{recordedMetersCount} <span className="text-xs font-bold text-slate-400">/ {totalMetersCount} hộ</span></span>
-              <span className="text-[11px] font-semibold text-slate-500">Hoàn tất tuyến</span>
-            </div>
-            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-2 flex">
-              <div className="bg-sky-600" style={{ width: `${progressPercent}%` }} />
-            </div>
-          </div>
-
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm số nhà, mã ĐH, tên KH..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-            />
-          </div>
-
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100/70 rounded-xl text-[11px] font-bold">
-            <button
-              onClick={() => setFilterTab('ALL')}
-              className={`flex-1 py-1.5 rounded-lg transition-all ${
-                filterTab === 'ALL' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Tất cả ({totalMetersCount})
-            </button>
-            <button
-              onClick={() => setFilterTab('PENDING')}
-              className={`flex-1 py-1.5 rounded-lg transition-all ${
-                filterTab === 'PENDING' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Chưa ghi ({pendingMetersCount})
-            </button>
-            <button
-              onClick={() => setFilterTab('RECORDED')}
-              className={`flex-1 py-1.5 rounded-lg transition-all ${
-                filterTab === 'RECORDED' ? 'bg-sky-800 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Đã ghi ({recordedMetersCount})
-            </button>
-          </div>
-
-          {/* Meter List */}
-          <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1 custom-scrollbar">
-            {filteredMeters.map((meter) => {
-              const isSelected = meter.id === selectedMeter?.id;
-              const isRecorded = meter.readingStatus === 'RECORDED';
-              const isLocked = meter.readingStatus === 'LOCKED';
-
-              return (
-                <div
-                  key={meter.id}
-                  onClick={() => handleSelectMeter(meter)}
-                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                    isSelected
-                      ? 'bg-sky-50/90 border-sky-400 shadow-sm ring-1 ring-sky-300'
-                      : 'bg-white border-slate-200/80 hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-slate-900 truncate">{meter.customerName}</h4>
-                    <div className="flex items-center gap-1">
-                      {isSelected && (
-                        <span className="px-1.5 py-0.5 bg-sky-200 text-sky-900 text-[9px] font-extrabold rounded">
-                          ĐANG CHỌN
-                        </span>
-                      )}
-                      {isRecorded ? (
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded-full flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Đã ghi
-                        </span>
-                      ) : isLocked ? (
-                        <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-[10px] font-extrabold rounded-full flex items-center gap-1">
-                          <Lock className="w-3 h-3" />
-                          Khóa cửa
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-semibold rounded-full">
-                          Chưa ghi
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 mt-0.5 truncate">{meter.address}</p>
-
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2 font-medium">
-                    <span>MĐH: <strong className="text-slate-600">{meter.meterCode}</strong></span>
-                    {isRecorded ? (
-                      <span className="text-emerald-700 font-extrabold">{meter.currentIndex?.toLocaleString('vi-VN')} m³</span>
-                    ) : isLocked ? (
-                      <span className="text-rose-600 font-semibold">{meter.notes}</span>
-                    ) : (
-                      <span>Kỳ trước: {meter.previousIndex} m³</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-400 font-medium">
-            {pendingMetersCount} điểm đo còn lại trong ca • <strong>Tự động chuyển tiếp khi lưu</strong>
-          </div>
+        {/* Left Column (Desktop Only): Route list & meter search (3 cols) */}
+        <div className="hidden lg:block lg:col-span-3 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+          {renderMeterListContent(false)}
         </div>
 
         {/* Right Area: Conditionally render Recorded View vs Recording Flow */}

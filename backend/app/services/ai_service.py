@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from pathlib import Path
 from typing import Tuple, List, Optional
 import cv2
@@ -11,6 +12,8 @@ from torchvision import transforms
 from fastapi import HTTPException, status
 from app.core.config import settings
 from app.schemas.ai import PolygonPoint, PredictionDetail, VisualizationDetail
+
+logger = logging.getLogger("uvicorn")
 
 class BidirectionalLSTM(nn.Module):
     def __init__(self, nIn: int, nHidden: int, nOut: int):
@@ -79,8 +82,13 @@ class AIService:
         try:
             from ultralytics import YOLO
             if os.path.exists(settings.YOLO_MODEL_PATH):
-                self.yolo_model = YOLO(settings.YOLO_MODEL_PATH)
-        except Exception:
+                # Khai báo rõ task="segment" để hỗ trợ cả tệp .pt và .onnx (tránh lỗi KeyError do ONNX mặc định detect)
+                self.yolo_model = YOLO(settings.YOLO_MODEL_PATH, task="segment")
+                logger.info(f"✅ [AIService] YOLO Segmentation model loaded: {settings.YOLO_MODEL_PATH}")
+            else:
+                logger.warning(f"⚠️ [AIService] YOLO model path does not exist: {settings.YOLO_MODEL_PATH}")
+        except Exception as e:
+            logger.error(f"❌ [AIService] Failed to load YOLO model: {e}")
             self.yolo_model = None
 
         try:
@@ -95,7 +103,11 @@ class AIService:
                     transforms.ToTensor(),
                     transforms.Normalize((0.5,), (0.5,))
                 ])
-        except Exception:
+                logger.info(f"✅ [AIService] CRNN OCR model loaded: {settings.CRNN_MODEL_PATH}")
+            else:
+                logger.warning(f"⚠️ [AIService] CRNN model path does not exist: {settings.CRNN_MODEL_PATH}")
+        except Exception as e:
+            logger.error(f"❌ [AIService] Failed to load CRNN model: {e}")
             self.crnn_model = None
 
     @classmethod
@@ -150,10 +162,6 @@ class AIService:
             seq = "".join(chars)
             if not seq:
                 return "", 0.0
-
-            # Xử lý ký tự lặp ở đuôi do co giãn chiều ngang CTC
-            if len(seq) == 6 and seq[-1] == seq[-2]:
-                seq = seq[:-1]
 
             probs = torch.softmax(output, dim=2)
             max_probs, _ = probs.max(dim=2)

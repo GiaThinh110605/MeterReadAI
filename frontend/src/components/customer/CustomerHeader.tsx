@@ -1,15 +1,17 @@
 import React from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 
 interface CustomerHeaderProps {
   customerName: string;
   meterSerial: string;
   onOpenNotifications?: () => void;
+  onToggleMobileSidebar?: () => void;
 }
 
 export const CustomerHeader: React.FC<CustomerHeaderProps> = ({
   customerName,
   meterSerial,
+  onToggleMobileSidebar,
 }) => {
   const getInitials = (name?: string) => {
     if (!name) return 'KH';
@@ -21,14 +23,25 @@ export const CustomerHeader: React.FC<CustomerHeaderProps> = ({
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-20">
-      <div>
-        <p className="text-[10px] tracking-wider font-bold text-slate-400 uppercase">
-          CỔNG DỊCH VỤ KHÁCH HÀNG
-        </p>
-        <p className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">
-          Xin chào, {customerName}
-        </p>
+    <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {onToggleMobileSidebar && (
+          <button
+            onClick={onToggleMobileSidebar}
+            className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors -ml-2"
+            aria-label="Mở menu khách hàng"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <div>
+          <p className="text-[10px] tracking-wider font-bold text-slate-400 uppercase">
+            CỔNG DỊCH VỤ KHÁCH HÀNG
+          </p>
+          <p className="text-xs sm:text-sm font-bold text-slate-800 leading-tight truncate max-w-[170px] sm:max-w-none">
+            Xin chào, {customerName}
+          </p>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

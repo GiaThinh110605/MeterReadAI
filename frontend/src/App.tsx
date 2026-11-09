@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Route as RouteIcon, History as HistoryIcon, Camera as CameraIcon, LogOut } from 'lucide-react';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { RouteManagementPage } from './pages/RouteManagementPage';
@@ -35,6 +36,7 @@ export const App: React.FC = () => {
     'login' | 'register' | 'customer' | 'admin' | 'routes' | 'reading' | 'history'
   >(() => getInitialPage(getInitialUser()));
   const [selectedRouteId, setSelectedRouteId] = useState<number>(1);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const handleOpenMeterReading = (routeId: number) => {
     setSelectedRouteId(routeId);
@@ -147,9 +149,11 @@ export const App: React.FC = () => {
       <Sidebar
         currentPage={currentPage}
         onNavigate={(page) => setCurrentPage(page as any)}
+        isOpenMobile={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
         <Header
           currentRouteTitle={
             selectedRouteId === 2
@@ -159,6 +163,7 @@ export const App: React.FC = () => {
           billingPeriod="Kỳ 04/2025"
           currentUser={currentUser}
           onLogout={handleLogout}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
         <main className="flex-1 overflow-y-auto">
@@ -178,6 +183,50 @@ export const App: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (Dành riêng cho nhân viên thao tác 1 tay) */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 px-3 py-1.5 flex items-center justify-around shadow-lg">
+        <button
+          onClick={() => setCurrentPage('routes')}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
+            currentPage === 'routes' ? 'text-sky-600 font-bold' : 'text-slate-400 font-medium'
+          }`}
+        >
+          <RouteIcon className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Tuyến</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentPage('reading')}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
+            currentPage === 'reading' ? 'text-sky-600 font-bold' : 'text-slate-400 font-medium'
+          }`}
+        >
+          <div className="relative">
+            <CameraIcon className="w-5 h-5 mb-0.5" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+          </div>
+          <span className="text-[10px]">Ghi số</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentPage('history')}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
+            currentPage === 'history' ? 'text-sky-600 font-bold' : 'text-slate-400 font-medium'
+          }`}
+        >
+          <HistoryIcon className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Lịch sử</span>
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center justify-center p-1.5 rounded-xl text-slate-400 hover:text-rose-600 transition-all"
+        >
+          <LogOut className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">Thoát</span>
+        </button>
+      </nav>
     </div>
   );
 };

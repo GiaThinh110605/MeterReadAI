@@ -26,6 +26,7 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
   const [currentTab, setCurrentTab] = useState<string>('overview');
   const [assignRouteId, setAssignRouteId] = useState<number | undefined>(undefined);
   const [pendingComplaintsCount, setPendingComplaintsCount] = useState<number>(0);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
     api.getAdminComplaints()
@@ -77,12 +78,15 @@ export const AdminPortalPage: React.FC<AdminPortalPageProps> = ({
         onSwitchPortal={onSwitchPortal}
         onLogout={onLogout}
         pendingComplaintsCount={pendingComplaintsCount}
+        isOpenMobile={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader
           adminName={currentUser?.fullName || 'Quản trị viên'}
           adminRole={currentUser?.role === 'ADMIN' ? 'Quản trị viên cấp cao' : 'Nhân sự vận hành'}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
         <main className="flex-1 overflow-y-auto">{renderContent()}</main>
       </div>

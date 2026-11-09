@@ -79,9 +79,9 @@ export const CameraView: React.FC<CameraViewProps> = ({
                     {polygon && polygon.length >= 3 ? (
                       <polygon
                         points={polygon.map((p) => `${p.x},${p.y}`).join(' ')}
-                        fill="rgba(14, 165, 233, 0.18)"
-                        stroke="#0284c7"
-                        strokeWidth={Math.max(2, Math.round(imgW * 0.004))}
+                        fill="none"
+                        stroke="#38bdf8"
+                        strokeWidth={Math.max(2, Math.round(imgW * 0.0035))}
                         strokeDasharray="8 4"
                       />
                     ) : (
@@ -90,23 +90,23 @@ export const CameraView: React.FC<CameraViewProps> = ({
                         y={bbox[1]}
                         width={bbox[2] - bbox[0]}
                         height={bbox[3] - bbox[1]}
-                        fill="rgba(14, 165, 233, 0.18)"
-                        stroke="#0284c7"
-                        strokeWidth={Math.max(2, Math.round(imgW * 0.004))}
+                        fill="none"
+                        stroke="#38bdf8"
+                        strokeWidth={Math.max(2, Math.round(imgW * 0.0035))}
                         rx={6}
                       />
                     )}
                   </svg>
 
+                  {/* Hiển thị số nhận diện ở góc trên khung ảnh (HUD Badge), tuyệt đối KHÔNG đè lên vùng mặt số */}
                   {detectedSequence && (
-                    <div
-                      className="absolute pointer-events-none flex items-center"
-                      style={{
-                        left: `${Math.max(4, Math.min(80, (bbox[0] / imgW) * 100))}%`,
-                        top: `${Math.max(4, Math.min(85, (bbox[1] / imgH) * 100 - 6))}%`,
-                      }}
-                    >
-                      <span className="bg-sky-950/90 border border-sky-400 backdrop-blur-sm text-sky-200 font-mono text-xs font-black px-2 py-0.5 rounded-lg shadow-lg tracking-wider">
+                    <div className="absolute top-3 left-3 z-10 pointer-events-none flex items-center gap-2 bg-slate-900/85 border border-sky-400/60 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-lg">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-300">AI Nhận diện:</span>
+                      <span className="font-mono text-sm font-black text-sky-300 tracking-wider">
                         {detectedSequence}
                       </span>
                     </div>
@@ -157,16 +157,16 @@ export const CameraView: React.FC<CameraViewProps> = ({
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 flex items-center justify-center gap-2 shadow-sm"
+            className="py-3 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-xs sm:text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-sky-600/20 transition-all min-h-[44px]"
           >
-            <UploadCloud className="w-4 h-4 text-slate-500" />
-            <span>Chụp lại / Đổi ảnh</span>
+            <Camera className="w-4 h-4 text-white" />
+            <span>Chụp / Đổi ảnh</span>
           </button>
 
           <button
             onClick={onScanAI}
             disabled={isScanning || !imageSrc}
-            className="py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+            className="py-3 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 active:bg-slate-100 text-xs font-bold text-slate-700 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 min-h-[44px]"
           >
             <Scan className={`w-4 h-4 text-sky-600 ${isScanning ? 'animate-spin' : ''}`} />
             <span>{isScanning ? 'Đang phân tích...' : 'Quét lại AI'}</span>
