@@ -323,6 +323,35 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 | | | D3 | 111 | 15.41M | 41.0 | 0.730 | 0.674 | 0.730 | 0.651 | 0.7272 | 43.07 |
 | | | D4 | 111 | 15.41M | 41.0 | 0.116 | 0.059 | 0.091 | 0.031 | 0.2279 | 52.25 |
 
+#### 📊 So sánh Trực quan & Phân tích Đánh đổi (Size, Latency vs. Confidence):
+Nhóm đã tiến hành khảo sát độc lập toàn bộ các mô hình phân đoạn cơ sở trên cùng tập ảnh kiểm thử hiện trường:
+- **Dung lượng & Tham số mô hình:** Các dòng nano thế hệ mới (`yolo11n-seg`, `yolo12n-seg`, `yolov8n-seg`) đạt kích thước cực kỳ tinh gọn (**5.72 - 6.45 MB**), tối ưu tuyệt đối cho triển khai thiết bị di động tại hiện trường, trong khi nhóm mô hình YOLOE có kích thước lớn hơn đáng kể (**10.85 - 29.71 MB**).
+- **Mối quan hệ đánh đổi Độ trễ (Latency) & Độ tự tin (Confidence):** Nhóm `yolo11n-seg` và `yolo26n-seg` thể hiện tính vượt trội khi duy trì độ tự tin dự đoán cao nhất ($>0.85$) trong khi thời gian suy luận chỉ mất khoảng 10 - 25ms.
+
+<p align="center">
+  <img src="README_IMAGE/compare_baseline_mb.png" width="44%" alt="Dung lượng 7 mô hình baseline trên Merge Dataset" />
+  <img src="README_IMAGE/compare_baseline_latency_conf.png" width="54%" alt="So sánh độ trễ suy luận và độ tự tin 7 mô hình baseline" />
+</p>
+<p align="center">
+  <em>Hình 7.0a: So sánh dung lượng lưu trữ (MB) và mối quan hệ đánh đổi giữa Độ trễ (Latency) với Độ tự tin (Confidence) của 7 mô hình phân đoạn Baseline</em>
+</p>
+
+#### 👁️ Đánh giá Trực quan Dự đoán Phân đoạn Mặt số giữa các Mô hình Baseline vs. Ground Truth:
+
+<p align="center">
+  <img src="README_IMAGE/compare_baseline_1.png" width="98%" alt="So sánh dự đoán phân đoạn 7 mô hình baseline trên mẫu ảnh id_1047" />
+</p>
+<p align="center">
+  <em>Hình 7.0b: Đánh giá trực quan dự đoán vùng mặt số đồng hồ nước giữa 7 mô hình baseline và Ground Truth (Mẫu ảnh id_1047_value_84_705.jpg)</em>
+</p>
+
+<p align="center">
+  <img src="README_IMAGE/compare_baseline_2.png" width="98%" alt="So sánh dự đoán phân đoạn 7 mô hình baseline trên mẫu ảnh id_388" />
+</p>
+<p align="center">
+  <em>Hình 7.0c: Đánh giá trực quan dự đoán vùng mặt số đồng hồ nước giữa 7 mô hình baseline và Ground Truth (Mẫu ảnh id_388_value_14_678.jpg)</em>
+</p>
+
 ---
 
 ### 7.2. Nhận diện Chuỗi Chữ số OCR Baseline Sau Data Augmentation (CRNN vs. Tesseract)
@@ -352,11 +381,42 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 2. **Hạn chế của Tesseract:** Dù được fine-tune LSTM 200 epochs theo đúng hướng dẫn chuẩn `tesstrain`, Tesseract chỉ đạt Sequence Accuracy **3.18%** và CER lên đến **82.80%**. Tesseract truyền thống được tối ưu cho tài liệu văn bản in phẳng, không thể thích ứng với phông chữ cơ học dập nổi trên bánh răng, viền số sát nhau và hiện tượng lóa sáng/đọng nước trên mặt đồng hồ.
 3. **Quyết định triển khai:** CRNN sau augmentation được tích hợp chính thức vào module AI Engine (`backend/app/services/ai_service.py`), kết hợp cùng mô hình phân đoạn YOLO11-seg để phục vụ tác nghiệp hiện trường thời gian thực.
 
+#### ⚡ So sánh Tốc độ Suy luận (Latency) giữa CRNN và Tesseract OCR:
+Khảo sát thời gian xử lý thực tế trên các ảnh mặt số sau khi cắt đa giác (Polygon Masked Crop):
+
+<p align="center">
+  <img src="README_IMAGE/compare_ocr_tesseract_latency.png" width="55%" alt="So sánh tốc độ xử lý Latency giữa CRNN và Tesseract" />
+</p>
+<p align="center">
+  <em>Hình 7.0d: So sánh thời gian xử lý trung bình (Latency) giữa CRNN (~5.9 - 6.3 ms) và Tesseract OCR (~73.1 ms) trên ảnh mặt số cắt theo đa giác</em>
+</p>
+
+#### 🔬 Kiểm chứng Pipeline Thực tế: YOLO Polygon Segmentation ➔ Masked Crop ➔ CRNN vs. Tesseract:
+Quy trình tích hợp khép kín 3 bước:
+1. **Polygon Segmentation:** YOLO11-seg phát hiện và phân đoạn chính xác đường bao đa giác của cụm mặt số.
+2. **True Polygon Masked Crop:** Sử dụng mặt nạ đa giác làm sạch nền xung quanh thành màu trắng thuần, loại bỏ hoàn toàn viền kim loại và hoa văn gây nhiễu.
+3. **OCR Comparison:** Đưa ảnh cắt sạch qua cả 2 mô hình CRNN và Tesseract để so sánh kết quả nhận diện và độ trễ tức thời.
+
+<p align="center">
+  <img src="README_IMAGE/compare_ocr_tesseract_1.png" width="98%" alt="Pipeline YOLO Polygon Crop kết hợp CRNN vs Tesseract trên mẫu id_1129" />
+</p>
+<p align="center">
+  <em>Hình 7.0e: Thử nghiệm Pipeline trên ảnh id_1129: CRNN nhận diện chuẩn xác chuỗi số 00143703 trong 6.3ms, Tesseract không đọc được (68.6ms)</em>
+</p>
+
+<p align="center">
+  <img src="README_IMAGE/compare_ocr_tesseract_2.png" width="98%" alt="Pipeline YOLO Polygon Crop kết hợp CRNN vs Tesseract trên mẫu id_309" />
+</p>
+<p align="center">
+  <em>Hình 7.0f: Thử nghiệm Pipeline trên ảnh id_309: CRNN nhận diện chuẩn xác chuỗi số 00976452 trong 5.9ms, Tesseract không đọc được (64.4ms)</em>
+</p>
+
 #### 📸 Hình ảnh Thử nghiệm Thực tế trên Website (Live Inference Demo):
 Hệ thống MeterReadAI & WaterFlow sau khi tích hợp toàn diện mô hình phân đoạn **YOLO11-seg** (`best.onnx`) và mô hình nhận diện chuỗi ký tự **CRNN sau Augmentation** (`best_model.pth`):
-- **Khả năng tổng quát hóa với độ dài lớn:** Nhận diện chuẩn xác các đồng hồ có cấu hình chữ số dài phức tạp (**8 chữ số**, ví dụ: `"00322032"` và `"00058235"`).
-- **Tuân thủ quy chuẩn nghiệp vụ:** Bảo toàn tuyệt đối các chữ số `0` ở đầu (`"00322032"` $\to$ $322.032 \text{ m}^3$, `"00058235"` $\to$ $58.235 \text{ m}^3$).
-- **Trải nghiệm thị giác tối ưu:** Vùng mặt số được đóng khung đa giác xanh nổi bật, nhãn AI được đưa lên góc hiển thị HUD thông minh và **hoàn toàn không che đè lên vùng chữ số thực tế**, giúp nhân viên ghi số dễ dàng quan sát và đối soát trực tiếp bằng mắt thường.
+- **Khả năng tổng quát hóa với đa dạng cấu hình mặt số:** Nhận diện chuẩn xác từ đồng hồ nước sinh hoạt **5 chữ số**, **7 chữ số** đến các loại đồng hồ công nghiệp lớn **8 chữ số**.
+- **Tuân thủ quy chuẩn nghiệp vụ & Bảo toàn số 0 ở đầu:** Chuỗi số đọc được bảo toàn nguyên vẹn định dạng ký tự chuỗi (`"02728"` $\to$ $2.728 \text{ m}^3$, `"0010942"` $\to$ $10.942 \text{ m}^3$, `"00322032"` $\to$ $322.032 \text{ m}^3$).
+- **Tính toán lũy tiến hóa đơn tự động:** Tự động đối soát điều kiện $I_{mới} \ge I_{cũ}$, tính lượng tiêu thụ tức thời và áp biểu giá bậc thang sinh hoạt đa tầng (Bậc 1, Bậc 2, Bậc 3 kèm VAT 5% và phí BVMT 10%) với độ chính xác tuyệt đối.
+- **Trải nghiệm thị giác tối ưu (Anti-Overlap HUD):** Vùng mặt số được bao quanh bằng đường viền đa giác (Polygon Masking) chính xác theo góc nghiêng thực tế; nhãn nhận diện AI được đưa lên góc hiển thị HUD thông minh **hoàn toàn không che đè lên vùng chữ số**, giúp nhân viên dễ dàng kiểm tra đối chứng tại hiện trường.
 
 <p align="center">
   <img src="README_IMAGE/live_test_web_01.jpg" width="49%" alt="Thử nghiệm nhận diện thực tế đồng hồ 8 số 00322032 trên Web WaterFlow" />
@@ -364,6 +424,14 @@ Hệ thống MeterReadAI & WaterFlow sau khi tích hợp toàn diện mô hình 
 </p>
 <p align="center">
   <em>Hình 7.1: Giao diện thử nghiệm chạy thật trên website với mô hình YOLO11-seg và CRNN sau Augmentation nhận diện đồng hồ nước 8 chữ số</em>
+</p>
+
+<p align="center">
+  <img src="README_IMAGE/live_test_web_03.jpg" width="49%" alt="Thử nghiệm nhận diện đồng hồ 7 số 0010942 và tính tiền nước tự động" />
+  <img src="README_IMAGE/live_test_web_04.jpg" width="49%" alt="Thử nghiệm nhận diện đồng hồ 5 số 02728 và tính tiền nước tự động" />
+</p>
+<p align="center">
+  <em>Hình 7.2: Thử nghiệm thực tế với đồng hồ 7 chữ số (0010942 - tạm tính 183.901.410 đ) và 5 chữ số (02728 - tạm tính 41.593.860 đ) kèm phân bổ bậc thang chi tiết</em>
 </p>
 
 ---
@@ -628,6 +696,14 @@ cd frontend
 npm install
 npm run dev
 ```
+
+### Cách 3: Triển khai Máy chủ VPS Ubuntu 24.04 (Multipass + Gunicorn + Nginx + Cloudflare Tunnel)
+Chi tiết từng bước cấu hình Production, Socket Gunicorn, Reverse Proxy Nginx với SSL tự ký và tạo link truy cập công khai xem tại: [HUONG_DAN_DEPLOY_VA_KHOI_DONG.pdf](HUONG_DAN_DEPLOY_VA_KHOI_DONG.pdf).
+
+> 💡 **Khởi động lại Backend nhanh khi sửa code hoặc giao diện web bị xoay tròn không tải dữ liệu:**
+> ```bash
+> multipass exec vps-demo -- sudo systemctl restart meterreadai
+> ```
 
 ### Kiểm thử hệ thống (Pytest):
 ```bash
