@@ -354,9 +354,10 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 
 #### 📸 Hình ảnh Thử nghiệm Thực tế trên Website (Live Inference Demo):
 Hệ thống MeterReadAI & WaterFlow sau khi tích hợp toàn diện mô hình phân đoạn **YOLO11-seg** (`best.onnx`) và mô hình nhận diện chuỗi ký tự **CRNN sau Augmentation** (`best_model.pth`):
-- **Khả năng tổng quát hóa với độ dài lớn:** Nhận diện chuẩn xác các đồng hồ có cấu hình chữ số dài phức tạp (**8 chữ số**, ví dụ: `"00322032"` và `"00058235"`).
-- **Tuân thủ quy chuẩn nghiệp vụ:** Bảo toàn tuyệt đối các chữ số `0` ở đầu (`"00322032"` $\to$ $322.032 \text{ m}^3$, `"00058235"` $\to$ $58.235 \text{ m}^3$).
-- **Trải nghiệm thị giác tối ưu:** Vùng mặt số được đóng khung đa giác xanh nổi bật, nhãn AI được đưa lên góc hiển thị HUD thông minh và **hoàn toàn không che đè lên vùng chữ số thực tế**, giúp nhân viên ghi số dễ dàng quan sát và đối soát trực tiếp bằng mắt thường.
+- **Khả năng tổng quát hóa với đa dạng cấu hình mặt số:** Nhận diện chuẩn xác từ đồng hồ nước sinh hoạt **5 chữ số**, **7 chữ số** đến các loại đồng hồ công nghiệp lớn **8 chữ số**.
+- **Tuân thủ quy chuẩn nghiệp vụ & Bảo toàn số 0 ở đầu:** Chuỗi số đọc được bảo toàn nguyên vẹn định dạng ký tự chuỗi (`"02728"` $\to$ $2.728 \text{ m}^3$, `"0010942"` $\to$ $10.942 \text{ m}^3$, `"00322032"` $\to$ $322.032 \text{ m}^3$).
+- **Tính toán lũy tiến hóa đơn tự động:** Tự động đối soát điều kiện $I_{mới} \ge I_{cũ}$, tính lượng tiêu thụ tức thời và áp biểu giá bậc thang sinh hoạt đa tầng (Bậc 1, Bậc 2, Bậc 3 kèm VAT 5% và phí BVMT 10%) với độ chính xác tuyệt đối.
+- **Trải nghiệm thị giác tối ưu (Anti-Overlap HUD):** Vùng mặt số được bao quanh bằng đường viền đa giác (Polygon Masking) chính xác theo góc nghiêng thực tế; nhãn nhận diện AI được đưa lên góc hiển thị HUD thông minh **hoàn toàn không che đè lên vùng chữ số**, giúp nhân viên dễ dàng kiểm tra đối chứng tại hiện trường.
 
 <p align="center">
   <img src="README_IMAGE/live_test_web_01.jpg" width="49%" alt="Thử nghiệm nhận diện thực tế đồng hồ 8 số 00322032 trên Web WaterFlow" />
@@ -364,6 +365,14 @@ Hệ thống MeterReadAI & WaterFlow sau khi tích hợp toàn diện mô hình 
 </p>
 <p align="center">
   <em>Hình 7.1: Giao diện thử nghiệm chạy thật trên website với mô hình YOLO11-seg và CRNN sau Augmentation nhận diện đồng hồ nước 8 chữ số</em>
+</p>
+
+<p align="center">
+  <img src="README_IMAGE/live_test_web_03.jpg" width="49%" alt="Thử nghiệm nhận diện đồng hồ 7 số 0010942 và tính tiền nước tự động" />
+  <img src="README_IMAGE/live_test_web_04.jpg" width="49%" alt="Thử nghiệm nhận diện đồng hồ 5 số 02728 và tính tiền nước tự động" />
+</p>
+<p align="center">
+  <em>Hình 7.2: Thử nghiệm thực tế với đồng hồ 7 chữ số (0010942 - tạm tính 183.901.410 đ) và 5 chữ số (02728 - tạm tính 41.593.860 đ) kèm phân bổ bậc thang chi tiết</em>
 </p>
 
 ---
@@ -628,6 +637,14 @@ cd frontend
 npm install
 npm run dev
 ```
+
+### Cách 3: Triển khai Máy chủ VPS Ubuntu 24.04 (Multipass + Gunicorn + Nginx + Cloudflare Tunnel)
+Chi tiết từng bước cấu hình Production, Socket Gunicorn, Reverse Proxy Nginx với SSL tự ký và tạo link truy cập công khai xem tại: [HUONG_DAN_DEPLOY_VA_KHOI_DONG.pdf](HUONG_DAN_DEPLOY_VA_KHOI_DONG.pdf).
+
+> 💡 **Khởi động lại Backend nhanh khi sửa code hoặc giao diện web bị xoay tròn không tải dữ liệu:**
+> ```bash
+> multipass exec vps-demo -- sudo systemctl restart meterreadai
+> ```
 
 ### Kiểm thử hệ thống (Pytest):
 ```bash

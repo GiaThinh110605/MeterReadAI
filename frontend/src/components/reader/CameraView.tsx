@@ -79,7 +79,7 @@ export const CameraView: React.FC<CameraViewProps> = ({
                     {polygon && polygon.length >= 3 ? (
                       <polygon
                         points={polygon.map((p) => `${p.x},${p.y}`).join(' ')}
-                        fill="none"
+                        fill="rgba(56, 189, 248, 0.2)"
                         stroke="#38bdf8"
                         strokeWidth={Math.max(2, Math.round(imgW * 0.0035))}
                         strokeDasharray="8 4"

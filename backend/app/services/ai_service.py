@@ -245,9 +245,27 @@ class AIService:
                     x1, y1, x2, y2 = [int(v.item()) for v in box.xyxy[0]]
                     bbox = [max(0, x1), max(0, y1), min(w, x2), min(h, y2)]
                     
-                    if results[0].masks is not None and len(results[0].masks) > 0:
+                    if results[0].masks is not None and len(results[0].masks) > 0 and len(results[0].masks.xy[0]) >= 3:
                         seg = results[0].masks.xy[0]
-                        polygon = [PolygonPoint(x=int(pt[0]), y=int(pt[1])) for pt in seg]
+                        poly_pts = seg.astype(np.int32)
+                        polygon = [PolygonPoint(x=int(pt[0]), y=int(pt[1])) for pt in poly_pts]
+                        
+                        # 1. Cắt chính xác theo ranh giới đa giác (Polygon Masked Crop)
+                        mask = np.zeros((h, w), dtype=np.uint8)
+                        cv2.fillPoly(mask, [poly_pts], 255)
+                        
+                        # Giữ vùng bên trong đa giác, phủ trắng vùng ngoài để loại bỏ nhiễu cho OCR
+                        masked_img = np.full_like(img, 255)
+                        masked_img[mask == 255] = img[mask == 255]
+                        
+                        # Cắt sát vùng bao quanh đa giác
+                        px, py, pbw, pbh = cv2.boundingRect(poly_pts)
+                        px1, py1 = max(0, px), max(0, py)
+                        px2, py2 = min(w, px + pbw), min(h, py + pbh)
+                        cropped_img = masked_img[py1:py2, px1:px2]
+                        
+                        # Cập nhật bbox khớp với bounding rect của đa giác
+                        bbox = [px1, py1, px2, py2]
                     else:
                         polygon = [
                             PolygonPoint(x=bbox[0], y=bbox[1]),
@@ -255,7 +273,7 @@ class AIService:
                             PolygonPoint(x=bbox[2], y=bbox[3]),
                             PolygonPoint(x=bbox[0], y=bbox[3]),
                         ]
-                    cropped_img = img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                        cropped_img = img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
             except Exception:
                 pass
 
