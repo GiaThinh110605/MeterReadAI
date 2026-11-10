@@ -324,7 +324,7 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 | | | D4 | 111 | 15.41M | 41.0 | 0.116 | 0.059 | 0.091 | 0.031 | 0.2279 | 52.25 |
 
 #### 📊 So sánh Trực quan & Phân tích Đánh đổi (Size, Latency vs. Confidence):
-Nhóm đã tiến hành khảo sát độc lập toàn bộ các mô hình phân đoạn cơ sở trên cùng tập ảnh kiểm thử hiện trường:
+Toàn bộ quy trình thử nghiệm, nạp trọng số và trực quan hóa phân đoạn được thực hiện tại notebook [`ocr_evaluation/compare_baseline_models.ipynb`](ocr_evaluation/compare_baseline_models.ipynb):
 - **Dung lượng & Tham số mô hình:** Các dòng nano thế hệ mới (`yolo11n-seg`, `yolo12n-seg`, `yolov8n-seg`) đạt kích thước cực kỳ tinh gọn (**5.72 - 6.45 MB**), tối ưu tuyệt đối cho triển khai thiết bị di động tại hiện trường, trong khi nhóm mô hình YOLOE có kích thước lớn hơn đáng kể (**10.85 - 29.71 MB**).
 - **Mối quan hệ đánh đổi Độ trễ (Latency) & Độ tự tin (Confidence):** Nhóm `yolo11n-seg` và `yolo26n-seg` thể hiện tính vượt trội khi duy trì độ tự tin dự đoán cao nhất ($>0.85$) trong khi thời gian suy luận chỉ mất khoảng 10 - 25ms.
 
@@ -333,23 +333,24 @@ Nhóm đã tiến hành khảo sát độc lập toàn bộ các mô hình phân
   <img src="README_IMAGE/compare_baseline_latency_conf.png" width="54%" alt="So sánh độ trễ suy luận và độ tự tin 7 mô hình baseline" />
 </p>
 <p align="center">
-  <em>Hình 7.0a: So sánh dung lượng lưu trữ (MB) và mối quan hệ đánh đổi giữa Độ trễ (Latency) với Độ tự tin (Confidence) của 7 mô hình phân đoạn Baseline</em>
+  <em>Hình 7.0a: So sánh dung lượng lưu trữ (MB) và mối quan hệ đánh đổi giữa Độ trễ (Latency) với Độ tự tin (Confidence) của 7 mô hình phân đoạn Baseline (trích xuất từ compare_baseline_models.ipynb)</em>
 </p>
 
 #### 👁️ Đánh giá Trực quan Dự đoán Phân đoạn Mặt số giữa các Mô hình Baseline vs. Ground Truth:
+Toàn bộ quá trình hiển thị tuân thủ quy chuẩn **Instance Segmentation**: sử dụng mặt nạ đa giác bán trong suốt (Polygon Masking, $\alpha = 0.45$) ôm khít ranh giới thực tế của mặt số, hoàn toàn không vẽ ô vuông (Bounding Box) gây che khuất hoặc nhầm lẫn:
 
 <p align="center">
-  <img src="README_IMAGE/compare_baseline_1.png" width="98%" alt="So sánh dự đoán phân đoạn 7 mô hình baseline trên mẫu ảnh id_1047" />
+  <img src="README_IMAGE/compare_baseline_1.png" width="98%" alt="So sánh dự đoán phân đoạn đa giác 7 mô hình baseline trên mẫu ảnh id_1206" />
 </p>
 <p align="center">
-  <em>Hình 7.0b: Đánh giá trực quan dự đoán vùng mặt số đồng hồ nước giữa 7 mô hình baseline và Ground Truth (Mẫu ảnh id_1047_value_84_705.jpg)</em>
+  <em>Hình 7.0b: Đánh giá trực quan dự đoán mặt nạ đa giác (Polygon Mask) giữa 7 mô hình baseline và Ground Truth (Mẫu ảnh #1: id_1206_value_33_069.jpg)</em>
 </p>
 
 <p align="center">
-  <img src="README_IMAGE/compare_baseline_2.png" width="98%" alt="So sánh dự đoán phân đoạn 7 mô hình baseline trên mẫu ảnh id_388" />
+  <img src="README_IMAGE/compare_baseline_2.png" width="98%" alt="So sánh dự đoán phân đoạn đa giác 7 mô hình baseline trên mẫu ảnh id_1047" />
 </p>
 <p align="center">
-  <em>Hình 7.0c: Đánh giá trực quan dự đoán vùng mặt số đồng hồ nước giữa 7 mô hình baseline và Ground Truth (Mẫu ảnh id_388_value_14_678.jpg)</em>
+  <em>Hình 7.0c: Đánh giá trực quan dự đoán mặt nạ đa giác (Polygon Mask) giữa 7 mô hình baseline và Ground Truth (Mẫu ảnh #2: id_1047_value_84_705.jpg)</em>
 </p>
 
 ---
