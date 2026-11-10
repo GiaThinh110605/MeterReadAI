@@ -325,15 +325,27 @@ Các mô hình Instance Segmentation cơ sở được huấn luyện và đánh
 
 #### 📊 So sánh Trực quan & Phân tích Đánh đổi (Size, Latency vs. Confidence):
 Toàn bộ quy trình thử nghiệm, nạp trọng số và trực quan hóa phân đoạn được thực hiện tại notebook [`ocr_evaluation/compare_baseline_models.ipynb`](ocr_evaluation/compare_baseline_models.ipynb):
-- **Dung lượng & Tham số mô hình:** Các dòng nano thế hệ mới (`yolo11n-seg`, `yolo12n-seg`, `yolov8n-seg`) đạt kích thước cực kỳ tinh gọn (**5.72 - 6.45 MB**), tối ưu tuyệt đối cho triển khai thiết bị di động tại hiện trường, trong khi nhóm mô hình YOLOE có kích thước lớn hơn đáng kể (**10.85 - 29.71 MB**).
-- **Mối quan hệ đánh đổi Độ trễ (Latency) & Độ tự tin (Confidence):** Nhóm `yolo11n-seg` và `yolo26n-seg` thể hiện tính vượt trội khi duy trì độ tự tin dự đoán cao nhất ($>0.85$) trong khi thời gian suy luận chỉ mất khoảng 10 - 25ms.
+- **Dung lượng & Tham số mô hình:** Các dòng nano thế hệ mới (`yolo11n-seg`, `yolo12n-seg`, `yolov8n-seg`) đạt kích thước cực kỳ tinh gọn (**5.71 - 6.46 MB**), tối ưu tuyệt đối cho triển khai thiết bị di động tại hiện trường, trong khi nhóm mô hình YOLOE có kích thước lớn hơn đáng kể (**10.84 - 29.70 MB**).
+- **Mối quan hệ đánh đổi Độ trễ (Latency) & Độ tự tin (Confidence):** Nhóm `yolo26n-seg` và `yolov8n-seg` thể hiện tính vượt trội về tốc độ suy luận khi đạt độ trễ cực thấp (~34.4 - 34.8 ms, tương ứng ~28.7 - 29.0 FPS trên CPU) với độ tự tin trung bình cao ($0.80 - 0.83$).
+
+##### 🏆 Bảng Tổng hợp Định lượng Đánh giá 7 Mô hình Baseline (Trích xuất từ `compare_baseline_models.ipynb`):
+
+| Kiến trúc (Architecture) | Vùng phát hiện TB (Avg Dets) | Độ tự tin TB (Avg Conf) | Độ trễ TB (Latency ms) | Tốc độ (FPS CPU) | Dung lượng (Size MB) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **yolo26n-seg** | 1.50 | 0.800 | **34.44 ms** | **29.0** | 24.10 MB |
+| **yolov8n-seg** | 1.00 | **0.827** | **34.84 ms** | **28.7** | 6.46 MB |
+| **yolo12n-seg** | 1.00 | 0.802 | 57.02 ms | 17.5 | **5.75 MB** |
+| **yoloe-v8s-seg** | 21.75 | 0.760 | 79.22 ms | 12.6 | 29.70 MB |
+| **yoloe-26n-seg** | 4.00 | 0.655 | 84.72 ms | 11.8 | 10.84 MB |
+| **yoloe-11s-seg** | 20.00 | 0.783 | 141.31 ms | 7.1 | 26.51 MB |
+| **yolo11n-seg** | 1.00 | 0.824 | 379.14 ms | 2.6 | **5.71 MB** |
 
 <p align="center">
-  <img src="README_IMAGE/compare_baseline_mb.png" width="44%" alt="Dung lượng 7 mô hình baseline trên Merge Dataset" />
-  <img src="README_IMAGE/compare_baseline_latency_conf.png" width="54%" alt="So sánh độ trễ suy luận và độ tự tin 7 mô hình baseline" />
+  <img src="README_IMAGE/compare_baseline_mb.png" width="46%" alt="Dung lượng 7 mô hình baseline trên Merge Dataset" />
+  <img src="README_IMAGE/compare_baseline_latency_conf.png" width="52%" alt="So sánh độ trễ suy luận và độ tự tin 7 mô hình baseline" />
 </p>
 <p align="center">
-  <em>Hình 7.0a: So sánh dung lượng lưu trữ (MB) và mối quan hệ đánh đổi giữa Độ trễ (Latency) với Độ tự tin (Confidence) của 7 mô hình phân đoạn Baseline (trích xuất từ compare_baseline_models.ipynb)</em>
+  <em>Hình 7.0a: So sánh dung lượng lưu trữ (MB) và mối quan hệ đánh đổi giữa Độ trễ (Latency) với Độ tự tin (Confidence) của 7 mô hình phân đoạn Baseline (trích xuất trực tiếp từ compare_baseline_models.ipynb)</em>
 </p>
 
 #### 👁️ Đánh giá Trực quan Dự đoán Phân đoạn Mặt số giữa các Mô hình Baseline vs. Ground Truth:
