@@ -527,9 +527,41 @@ Sau khi đối chiếu kết quả thực nghiệm giữa các họ mô hình:
 Nhóm đã nghiên cứu và triển khai **4 giải pháp cải tiến chuyên sâu** nhắm thẳng vào các bài toán hóc búa của đồng hồ nước (hộp số chữ nhật dẹp, chữ số micro-scale, xoay góc nghiêng và nhiễu phản xạ):
 
 #### 1. C3k2_Star (StarNet CVPR 2024) — Cải tiến Kiến trúc Backbone tại P3
-- **Nguyên lý**: Kế thừa khối StarBlock từ công trình *"Rewrite the Stars"* (CVPR 2024), thay thế các khối Bottleneck chuẩn trong C3k2 tại tầng trích xuất P3/8 (nơi bắt đầu các đặc trưng ký tự và viền số). Khối áp dụng tích chập sâu Depthwise $7 \times 7$ và **phép nhân sao (Star Operation)** giữa hai nhánh chiếu $f_1, f_2$:
-  $$\text{StarBlock}(x) = \text{DWConv}_2\Big(g\big(\text{ReLU6}(f_1(x)) \odot f_2(x)\big)\Big) + x$$
-- **Tác dụng**: Phép nhân theo từng phần tử (element-wise multiplication) ánh xạ đặc trưng sang không gian số chiều vô hạn (implicit high-dimensional space) tương tự Self-Attention nhưng độ phức tạp tuyến tính $\mathcal{O}(N)$ thay vì $\mathcal{O}(N^2)$. Giúp bám sát đường viền đa giác cực mịn (Mask mAP50-95 tăng từ 88.7% lên **89.5%**), đồng thời bứt phá tốc độ suy luận từ 75.6 lên **118.7 FPS (+56.9% throughput)**.
+
+<p align="center">
+  <img src="README_IMAGE/yolo11_c3k2star_architecture.png" width="92%" alt="Kiến trúc YOLO11 với C3k2_Star tại Layer 4" />
+</p>
+<p align="center">
+  <em>Hình 11: Sơ đồ Kiến trúc YOLO11-seg tích hợp khối C3k2_Star tại Layer 4 (P3/8) trong Backbone</em>
+</p>
+
+<p align="center">
+  <img src="README_IMAGE/yolo11_c3k2star_detailed_architecture.png" width="95%" alt="Chi tiết vi mô C3k2_Star và StarBlock CVPR 2024" />
+</p>
+<p align="center">
+  <em>Hình 12: Chi tiết Vi mô Cấu trúc khối C3k2_Star và Phép nhân sao Star Operation (StarNet CVPR 2024)</em>
+</p>
+
+##### a. Động lực Thiết kế & So sánh Vị trí Can thiệp (Backbone P3 vs. Head Attention)
+- **Hạn chế của việc chèn Attention ở Head (như Coordinate Attention - CoordAtt)**: Các cơ chế Attention đặt tại Head (ngay trước các tầng Detect/Segment) chỉ thực hiện gán trọng số ở giai đoạn muộn, khi đặc trưng ảnh đã trải qua nhiều lần giảm mẫu (downsampling) và tích lũy sai số làm mờ nhòe các đường viền micro-scale.
+- **Ưu thế của việc can thiệp tại Backbone Layer 4 (P3/8)**: Tầng P3 ($80 \times 80$, 512 channels) là nơi khởi nguồn của các đặc trưng vật thể nhỏ (vạch chia bánh xe số, các nét viền ký tự số). Nâng cấp khối `C3k2` thứ 2 trong Backbone thành **`C3k2_Star`** cho phép mạng trích xuất và khuếch đại biểu diễn đặc trưng chất lượng cao ngay từ giai đoạn đầu của luồng trích xuất đặc trưng.
+
+##### b. Cấu trúc Vi mô C3k2_Star & StarBlock (CVPR 2024)
+- **Nguyên lý CSP (Cross-Stage Partial)**: Khối `C3k2_Star` kế thừa cấu trúc C2f/C3k2, phân tách kênh thành nhánh Shortcut và nhánh biến đổi đi qua $n$ khối `StarBlock` ($n=2$, tỷ lệ mở rộng $e=0.25$).
+- **Chi tiết các tầng trong StarBlock**:
+  1. **Depthwise Convolution $7 \times 7$ (`DWConv 7x7` + BatchNorm)**: Mở rộng trường tiếp nhận không gian cục bộ lớn ($7 \times 7$) với chi phí tính toán cực thấp.
+  2. **Hai nhánh chiếu song song $f_1, f_2$**: Đặc trưng không gian được đưa qua 2 phép chiếu tích chập $1 \times 1$:
+     - Nhánh phi tuyến: $f_1(\mathbf{x}') = \text{ReLU6}(\text{Conv}_{1 \times 1}(\mathbf{x}'))$
+     - Nhánh tuyến tính: $f_2(\mathbf{x}') = \text{Conv}_{1 \times 1}(\mathbf{x}')$
+  3. **Phép nhân sao (Star Operation $\star$)**: Thực hiện nhân từng phần tử (Hadamard product) giữa hai nhánh:
+     $$\mathbf{x}_{\star} = \text{ReLU6}(f_1(\mathbf{x}')) \odot f_2(\mathbf{x}')$$
+     *Ý nghĩa toán học (StarNet CVPR 2024)*: Phép nhân sao ánh xạ các vector đặc trưng vào **không gian Hilbert có số chiều vô hạn (implicit infinite-dimensional feature space)** tương tự cơ chế Self-Attention trong Transformer, nhưng hoàn toàn giữ vững độ phức tạp tính toán tuyến tính $\mathcal{O}(N)$ thay vì $\mathcal{O}(N^2)$ của ma trận Gram.
+  4. **Tầng chiếu hồi quy và kết nối phần dư (Residual Skip Connection)**:
+     $$\text{StarBlock}(\mathbf{x}) = \mathbf{x} + \text{DWConv}_2\Big(g\big(\text{ReLU6}(f_1(\mathbf{x}')) \odot f_2(\mathbf{x}')\big)\Big)$$
+
+##### c. Hiệu quả Thực nghiệm Đột phá
+- **Độ mịn đường viền Segmentation**: Nhờ khả năng biểu diễn phi tuyến không gian vô hạn chiều, mô hình phân đoạn các góc bo tròn, viền kính và các nét ký tự số nhỏ cực kỳ sắc sảo (Mask mAP50-95 trên tập D3 tăng từ 88.7% lên **89.5%**).
+- **Tăng tốc độ suy luận (Throughput Boost)**: Thuần túy sử dụng phép tích chập $7 \times 7$, $1 \times 1$ và phép nhân ma trận song song nên tận dụng tối đa năng lực phần cứng Tensor Core trên GPU NVIDIA (không bị nghẽn bộ nhớ do ma trận Attention lớn như Transformer). Tốc độ suy luận trên Tesla T4 nhảy vọt từ 75.63 FPS lên **118.67 FPS (+56.9% throughput)** trên D3 và đạt tới **158.73 FPS** core inference trên tập D1.
 
 #### 2. Inner-CIoU Loss — Đột phá Hàm Mất mát với Hộp Phụ trợ
 - **Nguyên lý**: Đưa vào hộp phụ trợ (Auxiliary Bounding Box) có tỷ lệ $\text{ratio} < 1.0$ đồng tâm với hộp gốc:

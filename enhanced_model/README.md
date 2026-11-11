@@ -18,10 +18,26 @@ Thư mục này chứa toàn bộ mã nguồn notebook, trọng số huấn luy�
 ## 2. 📐 Cơ sở Toán học & Nguyên lý Cải tiến
 
 ### 2.1. C3k2_Star (StarNet CVPR 2024 — "Rewrite the Stars")
-Thay thế khối Bottleneck truyền thống trong `C3k2` tại tầng P3/8 của Backbone bằng khối `StarBlock`. Khối áp dụng tích chập sâu Depthwise $7 \times 7$ và **phép nhân sao (Star Operation)** giữa hai nhánh chiếu $f_1, f_2$:
-$$\text{StarBlock}(x) = \text{DWConv}_2\Big(g\big(\text{ReLU6}(f_1(x)) \odot f_2(x)\big)\Big) + x$$
 
-Phép nhân phần tử $f_1(x) \odot f_2(x)$ ánh xạ các đặc trưng sang không gian số chiều vô hạn (implicit high-dimensional space) tương tự Self-Attention nhưng duy trì độ phức tạp tính toán tuyến tính $\mathcal{O}(N)$ thay vì $\mathcal{O}(N^2)$ của Transformer. Nhờ đó, mô hình phân đoạn đường viền mặt số và chữ số sắc sảo hơn mà không làm tăng độ trễ.
+<p align="center">
+  <img src="../README_IMAGE/yolo11_c3k2star_architecture.png" width="92%" alt="Kiến trúc YOLO11 với C3k2_Star tại Layer 4" />
+</p>
+<p align="center">
+  <em>Sơ đồ Kiến trúc YOLO11-seg tích hợp khối C3k2_Star tại Layer 4 (P3/8) trong Backbone</em>
+</p>
+
+<p align="center">
+  <img src="../README_IMAGE/yolo11_c3k2star_detailed_architecture.png" width="95%" alt="Chi tiết vi mô C3k2_Star và StarBlock CVPR 2024" />
+</p>
+<p align="center">
+  <em>Chi tiết Vi mô Cấu trúc khối C3k2_Star và Phép nhân sao Star Operation (StarNet CVPR 2024)</em>
+</p>
+
+- **Vị trí can thiệp**: Khác với các phương pháp chèn Attention ở Head (như Coordinate Attention - CoordAtt) chỉ điều chỉnh các kênh đầu ra sau khi đặc trưng đã bị nén giảm độ phân giải, **C3k2_Star can thiệp trực tiếp tại Layer 4 trong Backbone** (tầng trích xuất tỷ lệ P3/8 — độ phân giải $80 \times 80$, 512 channels), nơi khởi nguồn hình thành các đặc trưng vi mô của bánh xe số và chữ số đồng hồ nước.
+- **Cấu trúc vi mô StarBlock**: Khối áp dụng tích chập sâu Depthwise $7 \times 7$ (`DWConv 7x7` + BatchNorm), hai nhánh chiếu $1 \times 1$ ($f_1$ phi tuyến với `ReLU6` và $f_2$ tuyến tính) và **phép nhân sao (Star Operation $\star$)**:
+  $$\mathbf{x}_{\star} = \text{ReLU6}(f_1(\mathbf{x}')) \odot f_2(\mathbf{x}')$$
+  $$\text{StarBlock}(\mathbf{x}) = \mathbf{x} + \text{DWConv}_2\Big(g\big(\text{ReLU6}(f_1(\mathbf{x}')) \odot f_2(\mathbf{x}')\big)\Big)$$
+- **Ý nghĩa toán học**: Phép nhân Hadamard phần tử $\odot$ ánh xạ các vector đặc trưng sang không gian Hilbert có số chiều vô hạn (implicit infinite-dimensional feature space) tương tự Self-Attention của Transformer nhưng duy trì độ phức tạp tính toán tuyến tính $\mathcal{O}(N)$ thay vì $\mathcal{O}(N^2)$. Nhờ đó, mô hình phân đoạn đường viền mặt số và chữ số sắc sảo hơn mà không làm tăng độ trễ (đạt tới **118.67 FPS** trên Tesla T4).
 
 ### 2.2. Inner-IoU & Asymmetric Inner-IoU
 Inner-IoU tạo ra một hộp dự đoán phụ trợ $B^{inner}$ và hộp ground-truth phụ trợ $B^{gt, inner}$ bên trong hộp gốc với tâm giữ nguyên:
