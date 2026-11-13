@@ -12,6 +12,7 @@ Thư mục này chứa toàn bộ mã nguồn notebook, trọng số huấn luy�
 | **YOLO11n-seg-innerciou** | **Inner-CIoU Loss** | Đưa hộp phụ trợ (Auxiliary Bounding Box) với hệ số tỷ lệ $\text{ratio} < 1.0$ vào hàm mất mát CIoU | Tăng tốc độ hội tụ gradient cho các bounding box kích thước nhỏ và trung bình | [`yolo11-innerciou/`](yolo11-innerciou/) |
 | **YOLO11n-seg-innersiou** | **Inner-SIoU Loss** | Kết hợp Inner auxiliary box với phạt góc định hướng (Angle cost & Distance cost) của SIoU | Khắc phục sai số khi ảnh chụp bị xoay góc nghiêng, góc chéo hiện trường | [`yolo11-innersiou/`](yolo11-innersiou/) |
 | **YOLO11n-seg-asymmetric-inner-ciou** | **Asymmetric Inner-CIoU Loss** | Tùy biến tỷ lệ co giãn hộp phụ trợ độc lập theo 2 chiều ($\text{ratio}_w \ne \text{ratio}_h$) | Tối ưu hóa đặc thù vùng đọc số chữ nhật dẹp ($W \gg H$) và bánh xe số đứng ($H \gg W$) | [`yolov11-asymmetric_inner_ciou/`](yolov11-asymmetric_inner_ciou/) |
+| **YOLO11n-seg-c3k2star-asym-inner-ciou** | **C3k2_Star + Asym Inner-CIoU** | Kết hợp kép StarBlock tại Backbone P3/8 và hàm mất mát hộp phụ trợ bất đối xứng | Lập kỷ lục Mask mAP50 = 0.840 trên D4 OCR, tăng tốc độ suy luận 112 - 128 FPS | [`yolo11-c3k2stars-asymmetric_inner_ciou/`](yolo11-c3k2stars-asymmetric_inner_ciou/) |
 
 ---
 
@@ -61,6 +62,7 @@ Tất cả các thử nghiệm được thực hiện trên GPU **NVIDIA Tesla T
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.781 | 0.983 | 0.684 | 0.9939 | 8.15 ms | 122.67 |
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.781 | 0.983 | 0.687 | 0.9939 | 7.40 ms | 135.07 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | 0.782 | **0.983** | 0.688 | **0.9946** | **7.80 ms** | **128.14** |
+| **C3k2_Star + Asym Inner-CIoU** ⭐️ | 120 | 2.85M | 9.7 | 0.995 | 0.782 | 0.983 | 0.688 | 0.9944 | 7.79 ms | 128.40 |
 
 ---
 
@@ -71,6 +73,7 @@ Tất cả các thử nghiệm được thực hiện trên GPU **NVIDIA Tesla T
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.815 | 0.995 | 0.742 | 0.9996 | 8.16 ms | 122.53 |
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | **0.995** | **0.815** | **0.995** | **0.743** | **0.9998** | **8.19 ms** | **122.17** |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.995 | 0.814 | 0.995 | 0.742 | 0.9995 | 9.03 ms | 110.73 |
+| **C3k2_Star + Asym Inner-CIoU** | 120 | 2.85M | 9.7 | 0.995 | 0.813 | 0.995 | 0.741 | 0.9997 | 8.50 ms | 117.60 |
 
 ---
 
@@ -82,6 +85,7 @@ Tất cả các thử nghiệm được thực hiện trên GPU **NVIDIA Tesla T
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.926 | 0.995 | 0.887 | 0.9956 | 10.25 ms | 97.52 |
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.940 | 0.995 | 0.893 | 0.9920 | 12.53 ms | 79.80 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | **0.945** | **0.995** | **0.892** | **0.9958** | **12.94 ms** | **77.26** |
+| **C3k2_Star + Asym Inner-CIoU** | 120 | 2.85M | 9.7 | 0.995 | 0.938 | 0.995 | 0.884 | 0.9913 | 8.56 ms | 116.87 |
 
 ---
 
@@ -92,6 +96,7 @@ Tất cả các thử nghiệm được thực hiện trên GPU **NVIDIA Tesla T
 | **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | 0.984 | 0.571 | **0.832** | 0.306 | 0.9675 | 9.56 ms | 104.55 |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.984 | 0.572 | 0.830 | 0.308 | 0.9689 | 8.78 ms | 113.85 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.984 | **0.576** | 0.833 | **0.307** | 0.9691 | **8.65 ms** | **115.59** |
+| **C3k2_Star + Asym Inner-CIoU** ⭐️ | 120 | 2.85M | 9.7 | 0.983 | 0.573 | **0.840** 🏆 | 0.306 | 0.9677 | 8.93 ms | 112.03 |
 
 ---
 
