@@ -32,6 +32,7 @@
 - [7. 🏆 Báo cáo Kết quả Đánh giá Mô hình Cơ sở (Baseline Models)](#7--báo-cáo-kết-quả-đánh-giá-mô-hình-cơ-sở-baseline-models)
   - [7.1. Phân đoạn Vùng Mặt số & Ký tự (Instance Segmentation Baseline)](#71-bảng-so-sánh-hiệu-năng-các-mô-hình-phân-đoạn-baseline-instance-segmentation)
   - [7.2. Nhận diện Chuỗi Chữ số OCR Baseline Sau Data Augmentation (CRNN vs. Tesseract)](#72-nhận-diện-chuỗi-chữ-số-ocr-baseline-sau-data-augmentation-crnn-vs-tesseract)
+  - [7.3. Thực nghiệm Đánh giá trên Bộ Dữ liệu Thực tế Việt Nam (Transfer Learning & Finetune)](#73-thực-nghiệm-đánh-giá-trên-bộ-dữ-liệu-thực-tế-việt-nam-transfer-learning--finetune)
 - [8. 🔬 Phân tích Lỗi Chuyên sâu (Error Analysis) & Động lực Cải tiến](#8--phân-tích-lỗi-chuyên-sâu-error-analysis--động-lực-cải-tiến)
 - [9. 🚀 Kiến trúc Mô hình YOLO11 & Các Giải pháp Cải tiến (Enhanced Models)](#9--kiến-trúc-mô-hình-yolo11--các-giải-pháp-cải-tiến-enhanced-models)
   - [9.1. Tổng quan Kiến trúc YOLOv11](#91-tổng-quan-kiến-trúc-yolov11)
@@ -193,7 +194,7 @@ Gồm **8 màn hình** dành cho khối vận hành và ban quản lý xí nghi�
 
 ## 4. 📊 Tổng quan Dataset
 
-Dự án tổng hợp và chuẩn hóa 3 tập dữ liệu đồng hồ nước uy tín trên thế giới và bộ dữ liệu thực tế tại Việt Nam:
+Dự án tổng hợp và chuẩn hóa các tập dữ liệu đồng hồ nước uy tín trên thế giới kết hợp bộ dữ liệu thực tế tại Việt Nam:
 
 | Dataset | Nguồn | Số lượng ảnh | Phân chia (Train / Val / Test) | Định dạng nhãn |
 | :--- | :--- | :--- | :--- | :--- |
@@ -201,6 +202,9 @@ Dự án tổng hợp và chuẩn hóa 3 tập dữ liệu đồng hồ nước 
 | **Word-Wheel (D2)** | [Dryad Repository](https://datadryad.org/dataset/doi:10.5061/dryad.7d7wm3860) | 46,097 *(gốc: 46,098)* | 29,436 / 3,270 / 13,391 | PNG → JPEG + Segmentation masks |
 | **OCR Water Meter (D4)** | [Roboflow Universe](https://universe.roboflow.com/traffic-zcg6o/ocr-water-meters/dataset/2) | 10,598 | 9,273 / 880 / 445 | JPEG + YOLO polygon labels (digits) |
 | **Merge-Dataset (D1)** | *Kết hợp D2 + D3 + D4* | **57,939** | **39,704 / 4,274 / 13,961** | YOLO polygon format (16,247 test instances) |
+| **Mặt Đồng Hồ VN** | [Kaggle - lmgiathnh/dong-ho-nuoc-viet-nam](https://www.kaggle.com/datasets/lmgiathnh/dong-ho-nuoc-viet-nam) | 239 *(242 gốc)* | Bộ dữ liệu tự thu thập & đánh nhãn thực tế tại Việt Nam | JPEG + YOLO polygon masks (reading region) |
+
+> 🇻🇳 **Bộ dữ liệu Mặt Đồng Hồ Nước Việt Nam (`dong-ho-nuoc-viet-nam`)**: Là tập dữ liệu hình ảnh đồng hồ nước thực tế tại Việt Nam do tác giả tự thu thập và trực tiếp gán nhãn thủ công (polygon phân đoạn vùng mặt số đồng hồ `reading_region`), phục vụ bài toán định vị mặt số đồng hồ nước với bối cảnh thực tế tại Việt Nam. Dữ liệu được công khai trên [Kaggle - lmgiathnh/dong-ho-nuoc-viet-nam](https://www.kaggle.com/datasets/lmgiathnh/dong-ho-nuoc-viet-nam).
 
 ### 4.1. Bộ Dữ liệu Nhận diện Chữ số Đồng hồ Nước (OCR / Digit Datasets)
 Phục vụ bài toán cắt lọc vùng mặt số (`reading_region`) và nhận diện chuỗi chữ số bánh răng chuẩn kích thước `(H=60, W=200)`:
@@ -446,6 +450,26 @@ Hệ thống MeterReadAI & WaterFlow sau khi tích hợp toàn diện mô hình 
 <p align="center">
   <em>Hình 7.2: Thử nghiệm thực tế với đồng hồ 7 chữ số (0010942 - tạm tính 183.901.410 đ) và 5 chữ số (02728 - tạm tính 41.593.860 đ) kèm phân bổ bậc thang chi tiết</em>
 </p>
+
+### 7.3. Thực nghiệm Đánh giá trên Bộ Dữ liệu Thực tế Việt Nam (Transfer Learning & Finetune)
+
+Nhằm kiểm chứng khả năng ứng dụng thực tế tại Việt Nam, nhóm đã thực hiện 3 kịch bản huấn luyện và đánh giá trên bộ dữ liệu mặt đồng hồ nước Việt Nam ([`dong-ho-nuoc-viet-nam`](https://www.kaggle.com/datasets/lmgiathnh/dong-ho-nuoc-viet-nam) - 239 ảnh gồm 191 Train, 24 Val, 24 Test):
+1. **`yolo11n-vn-dataset`**: Huấn luyện trực tiếp từ trọng số COCO (`yolo11n-seg.pt`).
+2. **`yolo11n-vn-finetune`**: Chuyển giao tri thức (Transfer Learning), fine-tune toàn bộ mạng từ checkpoint đã huấn luyện trên tập Merge D1 (57,939 ảnh).
+3. **`yolo11n-vn-finetune-freezebackbone`**: Fine-tune từ checkpoint Merge D1 nhưng đóng băng 10 layer đầu của Backbone (`freeze=9`), chỉ cập nhật Neck và Head.
+
+#### 📊 Bảng Số liệu Đánh giá trên Tập Test (24 ảnh, 24 instances):
+
+| Chiến lược huấn luyện | Thư mục mã nguồn | Bbox P | Bbox R | Bbox mAP50 | Bbox mAP50-95 | Mask P | Mask R | Mask mAP50 | Mask mAP50-95 | F1-Score | Độ trễ (ms) | FPS (Tesla T4) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Train từ đầu (COCO)** | [`models_baseline/yolo11n-vn-dataset`](models_baseline/yolo11n-vn-dataset) | 0.956 | 0.958 | 0.990 | 0.747 | 0.956 | 0.958 | 0.990 | 0.691 | 0.9572 | 13.66 ms | 73.21 |
+| **Fine-tune toàn bộ từ D1** | [`models_baseline/yolo11n-vn-finetune`](models_baseline/yolo11n-vn-finetune) | **0.999** | **1.000** | **0.995** | **0.818** | **0.999** | **1.000** | **0.995** | **0.759** | **0.9997** | **12.85 ms** | **77.83** |
+| **Fine-tune Freeze Backbone** | [`models_baseline/yolo11n-vn-finetune-freezebackbone`](models_baseline/yolo11n-vn-finetune-freezebackbone) | 0.995 | **1.000** | **0.995** | 0.812 | 0.995 | **1.000** | **0.995** | 0.749 | 0.9974 | 13.79 ms | 72.52 |
+
+#### 💡 Phân tích & Đánh giá Kỹ thuật:
+- **Hiệu quả vượt bậc của Transfer Learning:** Việc fine-tune từ mô hình đã học trên tập dữ liệu lớn D1 giúp cải thiện vượt trội chất lượng mặt nạ phân đoạn: **Mask mAP50-95 tăng từ 0.691 lên 0.759 (+6.8%)** và **Recall đạt tuyệt đối 100%** (không bỏ sót bất kỳ mặt đồng hồ nào trên tập test).
+- **Fine-tune toàn bộ vs. Freeze Backbone:** Fine-tune toàn bộ (`yolo11n-vn-finetune`) đạt hiệu quả cao hơn đóng băng backbone (+1.0% Mask mAP50-95, F1 0.9997 vs 0.9974). Nguyên nhân là do góc chụp, điều kiện ánh sáng và lớp kính mờ/bụi bẩn đặc thù của đồng hồ nước tại Việt Nam đòi hỏi các bộ lọc không gian ở tầng thấp (low-level convolutional filters trong Backbone) phải được tinh chỉnh để bắt trọn đặc trưng miền dữ liệu mới.
+- **Tốc độ thời gian thực (Real-time Edge Inference):** Cả 3 biến thể đều duy trì tốc độ rất cao trên GPU Tesla T4 (**72.5 - 77.8 FPS**, tương đương ~12.8 - 13.8 ms/ảnh), hoàn toàn đáp ứng yêu cầu xử lý tức thời khi nhân viên chụp ảnh trên thiết bị di động tại hiện trường.
 
 ---
 
@@ -723,7 +747,8 @@ print(f"🎭 Mask mAP50: {metrics.seg.map50:.4f}")
   - Trọng số mô hình cải tiến Inner-SIoU D3 (100% Recall): [`enhanced_model/yolo11-innersiou/water-meters/best.pt`](enhanced_model/yolo11-innersiou/water-meters/best.pt)
   - Trọng số mô hình cải tiến Inner-SIoU D2 (0.9998 F1): [`enhanced_model/yolo11-innersiou/word_wheel_water_meter/best.pt`](enhanced_model/yolo11-innersiou/word_wheel_water_meter/best.pt)
   - Trọng số mô hình cải tiến Inner-SIoU D1: [`enhanced_model/yolo11-innersiou/merge/best.pt`](enhanced_model/yolo11-innersiou/merge/best.pt)
-- ☁️ **Kho dữ liệu đám mây (Google Drive)**:
+- ☁️ **Kho dữ liệu đám mây & Datasets**:
+  - 🇻🇳 [Kaggle - Dataset Đồng Hồ Nước Việt Nam (Tự thu thập & đánh nhãn)](https://www.kaggle.com/datasets/lmgiathnh/dong-ho-nuoc-viet-nam)
   - 📦 [Google Drive Data Backup (Tổng hợp)](https://drive.google.com/drive/u/0/folders/18UMXLWPYnHTnGbjmwSutPuWjKZCHdXMW)
   - 🦆 [Google Drive - Ảnh DuckDuckGo & Gán nhãn nhận diện chữ số (`data_1`)](https://drive.google.com/drive/folders/1_X-YEpZXvZ0kf4587wA0HyydjVwBagxR?usp=sharing)
   - 🏷️ [Google Drive - Gán nhãn nhận diện chữ số từ dataset ban đầu (`data_2`)](https://drive.google.com/drive/folders/1NOSI8uuBCsmmhvh0fjHcnblbG5Q43TGB?usp=sharing)
