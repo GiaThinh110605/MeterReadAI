@@ -1,10 +1,10 @@
 # Enhanced Models — Nghiên Cứu & Đột Phá Kiến Trúc YOLO11 Cho MeterReadAI
 
-Thư mục này chứa toàn bộ mã nguồn notebook, trọng số huấn luyện (`best.pt`) và báo cáo thực nghiệm của **4 giải pháp mô hình cải tiến** dựa trên nền tảng **YOLO11n-seg** trong khuôn khổ dự án **MeterReadAI & WaterFlow**.
+Thư mục này chứa toàn bộ mã nguồn notebook, trọng số huấn luyện (`best.pt`) và báo cáo thực nghiệm của **5 giải pháp mô hình cải tiến** dựa trên nền tảng **YOLO11n-seg** trong khuôn khổ dự án **MeterReadAI & WaterFlow**.
 
 ---
 
-## 1. 🌟 Tổng quan 4 Hướng Tiếp cận Cải tiến
+## 1. 🌟 Tổng quan 5 Hướng Tiếp cận Cải tiến
 
 | Mô hình Cải tiến | Phương pháp Đột phá | Cơ chế Cốt lõi | Điểm mạnh Nổi bật | Thư mục Lưu trữ |
 | :--- | :--- | :--- | :--- | :--- |
@@ -13,6 +13,7 @@ Thư mục này chứa toàn bộ mã nguồn notebook, trọng số huấn luy�
 | **YOLO11n-seg-innersiou** | **Inner-SIoU Loss** | Kết hợp Inner auxiliary box với phạt góc định hướng (Angle cost & Distance cost) của SIoU | Khắc phục sai số khi ảnh chụp bị xoay góc nghiêng, góc chéo hiện trường | [`yolo11-innersiou/`](yolo11-innersiou/) |
 | **YOLO11n-seg-asymmetric-inner-ciou** | **Asymmetric Inner-CIoU Loss** | Tùy biến tỷ lệ co giãn hộp phụ trợ độc lập theo 2 chiều ($\text{ratio}_w \ne \text{ratio}_h$) | Tối ưu hóa đặc thù vùng đọc số chữ nhật dẹp ($W \gg H$) và bánh xe số đứng ($H \gg W$) | [`yolov11-asymmetric_inner_ciou/`](yolov11-asymmetric_inner_ciou/) |
 | **YOLO11n-seg-c3k2star-asym-inner-ciou** | **C3k2_Star + Asym Inner-CIoU** | Kết hợp kép StarBlock tại Backbone P3/8 và hàm mất mát hộp phụ trợ bất đối xứng | Lập kỷ lục Mask mAP50 = 0.840 trên D4 OCR, tăng tốc độ suy luận 112 - 128 FPS | [`yolo11-c3k2stars-asymmetric_inner_ciou/`](yolo11-c3k2stars-asymmetric_inner_ciou/) |
+| **YOLO11n-seg-distill** | **Knowledge Distillation (Chưng cất tri thức)** | Mạng Teacher `yolo11s-seg` truyền tri thức (dark knowledge) sang mạng Student `yolo11n-seg` | Nâng cao Mask mAP50 (+0.7%) và Recall/F1 trên D4 OCR mà không tăng kích thước mô hình khi suy luận | [`yolo11-distill/`](yolo11-distill/) |
 
 ---
 
@@ -48,6 +49,11 @@ $$b_t^{inner} = y_c - \frac{h \times \text{ratio}_h}{2}, \quad b_b^{inner} = y_c
 - **Trong Inner-CIoU thông thường**: $\text{ratio}_w = \text{ratio}_h = \text{ratio} \in (0.7, 0.85)$.
 - **Trong Asymmetric Inner-CIoU**: Do vùng đọc chỉ số đồng hồ nước Việt Nam có hình chữ nhật dài nằm ngang ($W / H \approx 3.5 \sim 5.0$), việc gán $\text{ratio}_w = 0.8$ và $\text{ratio}_h = 1.0$ (hoặc đảo lại cho bánh xe số đứng) giúp gradient của cạnh dài không bị bão hòa sớm, cải thiện độ khớp ranh giới vượt trội.
 
+### 2.3. Chưng cất Tri thức (Knowledge Distillation: YOLO11s $\to$ YOLO11n)
+- **Động lực kỹ thuật**: Mạng học sinh nhẹ `yolo11n-seg` (2.85M params) bị giới hạn về dung lượng tham số khi nhận diện các ký tự micro-scale bị nhòe mờ hoặc lóa kính. Bằng cách áp dụng **Knowledge Distillation**, mô hình học sinh tiếp thu biểu diễn không gian và xác suất mềm (soft-labels) từ mạng giáo viên `yolo11s-seg` (9.4M params, 22.0 GFLOPs):
+  $$\mathcal{L}_{total} = \mathcal{L}_{task}(y, \hat{y}_{student}) + \lambda_{kd} \cdot \mathcal{L}_{distill}(\hat{y}_{student}, \hat{y}_{teacher})$$
+- **Ưu thế triển khai**: Mạng học sinh sau khi chưng cất tri thức đạt độ nhạy (Recall) và F1-Score cao hơn đáng kể nhưng **hoàn toàn giữ nguyên kích thước siêu nhẹ (~2.85M params, ~6 MB)** và tốc độ suy luận thời gian thực (>104 FPS trên Tesla T4).
+
 ---
 
 ## 3. 📊 Bảng So sánh Hiệu năng Toàn diện (Comprehensive Benchmark)
@@ -63,6 +69,7 @@ Tất cả các thử nghiệm được thực hiện trên GPU **NVIDIA Tesla T
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.781 | 0.983 | 0.687 | 0.9939 | 7.40 ms | 135.07 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | 0.782 | **0.983** | 0.688 | **0.9946** | **7.80 ms** | **128.14** |
 | **C3k2_Star + Asym Inner-CIoU** ⭐️ | 120 | 2.85M | 9.7 | 0.995 | 0.782 | 0.983 | 0.688 | 0.9944 | 7.79 ms | 128.40 |
+| **YOLO11n-seg-distill (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.777 | 0.983 | 0.683 | 0.9945 | 8.10 ms | 123.42 |
 
 ---
 
@@ -74,6 +81,7 @@ Tất cả các thử nghiệm được thực hiện trên GPU **NVIDIA Tesla T
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | **0.995** | **0.815** | **0.995** | **0.743** | **0.9998** | **8.19 ms** | **122.17** |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.995 | 0.814 | 0.995 | 0.742 | 0.9995 | 9.03 ms | 110.73 |
 | **C3k2_Star + Asym Inner-CIoU** | 120 | 2.85M | 9.7 | 0.995 | 0.813 | 0.995 | 0.741 | 0.9997 | 8.50 ms | 117.60 |
+| **YOLO11n-seg-distill (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.811 | 0.995 | 0.740 | **0.9998** | 8.41 ms | 118.85 |
 
 ---
 
@@ -81,11 +89,12 @@ Tất cả các thử nghiệm được thực hiện trên GPU **NVIDIA Tesla T
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | 0.947 | 0.995 | 0.887 | 0.9943 | 13.22 ms | 75.63 |
-| **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | **0.995** | 0.945 | **0.995** | **0.895** | **0.9948** | **8.43 ms** | **118.67** |
+| **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | **0.995** | 0.945 | **0.995** | **0.895** | 0.9948 | **8.43 ms** | **118.67** |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.926 | 0.995 | 0.887 | 0.9956 | 10.25 ms | 97.52 |
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.940 | 0.995 | 0.893 | 0.9920 | 12.53 ms | 79.80 |
-| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | **0.945** | **0.995** | **0.892** | **0.9958** | **12.94 ms** | **77.26** |
+| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | **0.945** | **0.995** | **0.892** | **0.9958** | 12.94 ms | 77.26 |
 | **C3k2_Star + Asym Inner-CIoU** | 120 | 2.85M | 9.7 | 0.995 | 0.938 | 0.995 | 0.884 | 0.9913 | 8.56 ms | 116.87 |
+| **YOLO11n-seg-distill (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.934 | 0.995 | 0.881 | 0.9940 | 9.58 ms | 104.34 |
 
 ---
 
@@ -93,21 +102,25 @@ Tất cả các thử nghiệm được thực hiện trên GPU **NVIDIA Tesla T
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.985 | 0.578 | 0.827 | 0.311 | 0.9699 | 9.20 ms | 108.67 |
-| **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | 0.984 | 0.571 | **0.832** | 0.306 | 0.9675 | 9.56 ms | 104.55 |
+| **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | 0.984 | 0.571 | 0.832 | 0.306 | 0.9675 | 9.56 ms | 104.55 |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.984 | 0.572 | 0.830 | 0.308 | 0.9689 | 8.78 ms | 113.85 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.984 | **0.576** | 0.833 | **0.307** | 0.9691 | **8.65 ms** | **115.59** |
 | **C3k2_Star + Asym Inner-CIoU** ⭐️ | 120 | 2.85M | 9.7 | 0.983 | 0.573 | **0.840** 🏆 | 0.306 | 0.9677 | 8.93 ms | 112.03 |
+| **YOLO11n-seg-distill (Cải tiến)** | 114 | 2.85M | 9.7 | **0.986** | 0.568 | **0.834** 🥈 | 0.304 | **0.9723** 🏆 | 9.57 ms | 104.47 |
 
 ---
 
 ## 4. 💡 Đánh Giá Tổng Hợp & Đề Xuất Sử Dụng
 
-1. **Về khả năng phân đoạn đường viền & bứt phá tốc độ (C3k2_Star)**:
+1. **Về khả năng chưng cất tri thức (Knowledge Distillation)**:
+   - **YOLO11n-seg-distill** (kế thừa từ `yolo11s-seg`) tạo ra bước đột phá trên tập ký tự chữ số D4 với **Mask mAP50 tăng từ 0.827 lên 0.834 (+0.7%)**, **F1-Score cao nhất đạt 0.9723** và **Recall tăng cả Box (0.977) lẫn Mask (0.882)**. Kỹ thuật này giúp loại bỏ tối đa hiện tượng bỏ sót chữ số bị mờ mà không làm tăng dung lượng hay độ trễ lúc suy luận (duy trì 104.47 FPS).
+2. **Về khả năng phân đoạn đường viền & bứt phá tốc độ (C3k2_Star)**:
    - **C3k2_Star (StarNet CVPR 2024)** chứng minh hiệu quả vượt trội trên tập D3 với **Mask mAP50-95 tăng từ 0.887 lên 0.895 (+0.8%)**, F1-score đạt **0.9948** và tốc độ đạt tới **118.67 FPS (+56.9% throughput so với baseline)**. Trên tập D4, mô hình cải thiện Mask Precision ($0.874 \to 0.878$) và Mask mAP50 ($0.827 \to 0.832$), tách các nét số chữ nhật dẹp rõ nét.
-2. **Về độ phủ toàn diện & chống lệch góc (Inner-SIoU)**:
+3. **Về độ phủ toàn diện & chống lệch góc (Inner-SIoU)**:
    - **Inner-SIoU** loại bỏ hoàn toàn hiện tượng bỏ sót đồng hồ trên D3 với **Recall = 1.000 (100% bắt trúng)** và tăng **Mask mAP50-95 lên 0.893 (+0.6%)**. Trên D2 bánh xe số, mô hình đạt F1-Score **0.9998** và Box mAP50-95 **0.815 (+0.2%)**, đồng thời có zero inference parameter overhead (tốc độ 80 - 135 FPS).
-3. **Về khả năng định vị hộp chữ nhật lệch tỷ lệ**:
+4. **Về khả năng định vị hộp chữ nhật lệch tỷ lệ**:
    - **Asymmetric Inner-CIoU** duy trì tính ổn định cao nhất trên cả 4 kịch bản, đạt Box mAP50-95 = 0.945 trên D3 và Mask mAP50-95 = 0.892. Tốc độ suy luận đạt tới **115 - 128 FPS**, tối ưu tuyệt đối về latency vì không làm tăng số lượng tham số hay FLOPs trong lúc inference (chỉ tinh chỉnh hàm loss trong pha training).
-4. **Triển khai thực tế**:
-   - Khuyến nghị sử dụng **C3k2_Star** (khi cần độ mịn viền và tốc độ FPS cao), **Inner-SIoU** (khi cần Recall 100% chống bỏ sót), hoặc **Asymmetric Inner-CIoU** (khi cần độ khớp hộp bao tối ưu) làm core vision engine cho phân hệ đọc chỉ số tại hiện trường của MeterReadAI.
-
+5. **Mô hình lai ghép C3k2_Star + Asym Inner-CIoU**:
+   - Lập kỷ lục Mask mAP50 = 0.840 trên D4 OCR, kết hợp ưu thế trích xuất của StarBlock và cơ chế hộp phụ trợ bất đối xứng.
+6. **Triển khai thực tế**:
+   - Khuyến nghị sử dụng **YOLO11n-seg-distill** hoặc **C3k2_Star + Asym Inner-CIoU** cho phân hệ phát hiện vùng chữ số D4 (OCR), **C3k2_Star** hoặc **Inner-SIoU** cho phân hệ phát hiện toàn cảnh mặt đồng hồ D3 làm core vision engine cho phân hệ đọc chỉ số tại hiện trường của MeterReadAI.

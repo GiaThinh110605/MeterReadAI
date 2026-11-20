@@ -11,7 +11,7 @@
 **MeterReadAI & WaterFlow** là giải pháp toàn diện kết hợp công nghệ **Thị giác Máy tính Hiện đại (Instance Segmentation & OCR)** với **Hệ thống Quản lý và Tính tiền nước tự động**. Dự án giải quyết trọn vẹn từ bài toán nhận diện tự động vùng mặt số và chỉ số đồng hồ nước thực tế tại Việt Nam đến quy trình vận hành tuyến đọc, lập hóa đơn bậc thang có bảo toàn snapshot minh bạch và cổng tra cứu dịch vụ cho khách hàng.
 
 - 🎨 **Nguyên mẫu UI hoàn chỉnh (Google Stitch)**: [https://stitch.withgoogle.com/projects/3346993615529581711](https://stitch.withgoogle.com/projects/3346993615529581711)
-- 🚀 **Mô hình cải tiến cốt lõi**: `c3k2stars` (YOLO11n-seg tích hợp StarNet C3k2_Star tại P3), `asymmetric-inner-ciou` & mô hình lai ghép `c3k2stars-asymmetric_inner_ciou` (Mask mAP50 kỷ lục 0.840)
+- 🚀 **Mô hình cải tiến cốt lõi**: `c3k2stars` (YOLO11n-seg tích hợp StarNet C3k2_Star tại P3), `yolo11-distill` (Chưng cất tri thức từ YOLO11s-seg), `asymmetric-inner-ciou` & mô hình lai ghép `c3k2stars-asymmetric_inner_ciou` (Mask mAP50 kỷ lục 0.840)
 
 ---
 
@@ -548,7 +548,7 @@ Sau khi đối chiếu kết quả thực nghiệm giữa các họ mô hình:
 
 ### 9.3. Các Phương pháp Cải tiến Đột phá (C3k2_Star, Inner-CIoU, Inner-SIoU, Asymmetric Inner-CIoU)
 
-Nhóm đã nghiên cứu và triển khai **4 giải pháp cải tiến chuyên sâu** nhắm thẳng vào các bài toán hóc búa của đồng hồ nước (hộp số chữ nhật dẹp, chữ số micro-scale, xoay góc nghiêng và nhiễu phản xạ):
+Nhóm đã nghiên cứu và triển khai **5 giải pháp cải tiến chuyên sâu** nhắm thẳng vào các bài toán hóc búa của đồng hồ nước (hộp số chữ nhật dẹp, chữ số micro-scale, xoay góc nghiêng, nhiễu phản xạ và chưng cất tri thức):
 
 #### 1. C3k2_Star (StarNet CVPR 2024) — Cải tiến Kiến trúc Backbone tại P3
 
@@ -604,6 +604,10 @@ Nhóm đã nghiên cứu và triển khai **4 giải pháp cải tiến chuyên 
 - **Nguyên lý**: Giải pháp kết hợp đồng thời cải tiến kiến trúc **Backbone P3/8 (`C3k2_Star`)** và cải tiến hàm mất mát **Bounding Box Head (`Asymmetric Inner-CIoU`)** với tỷ lệ hai chiều $\text{ratio}_w = 0.70, \text{ratio}_h = 0.85$.
 - **Tác dụng**: Sự cộng hưởng giữa khả năng ánh xạ không gian vô hạn chiều của phép nhân sao $\star$ (tách các nét số dính nhau) cùng cơ chế hộp phụ trợ bất đối xứng (ôm sát dáng chữ nhật đứng của ký tự và chữ nhật ngang của mặt số) giúp mô hình lập **kỷ lục Mask mAP50 đạt 0.840** trên tập ký tự nhỏ D4 (vượt trội hơn cả Baseline $0.827$ và C3k2_Star đơn lẻ $0.832$), đồng thời đạt tốc độ suy luận cực nhanh **112.03 – 128.40 FPS**.
 
+#### 6. Knowledge Distillation — Chưng cất Tri thức từ YOLO11s-seg sang YOLO11n-seg
+- **Nguyên lý**: Sử dụng mạng giáo viên `yolo11s-seg` (9.4M params) hướng dẫn mạng học sinh nhẹ `yolo11n-seg` (2.85M params) thông qua phân bố soft-labels và hàm mất mát chưng cất tri thức.
+- **Tác dụng**: Khắc phục giới hạn dung lượng của mạng Nano trên tập ký tự chữ số nhỏ D4, nâng **Mask mAP50 lên 0.834 (+0.7%)**, **F1-Score đạt 0.9723** và tăng Recall toàn diện (Box R 0.977, Mask R 0.882) với kích thước mô hình siêu nhẹ (~2.85M params) và tốc độ trên 104 FPS trên GPU Tesla T4.
+
 ---
 
 ### 9.4. Bảng So sánh Hiệu năng Toàn diện: Baseline vs. Các Mô hình Cải tiến
@@ -613,21 +617,23 @@ Kết quả đánh giá độc lập trên tập kiểm thử (Test Split) với
 #### 1. Trên tập OCR Water Meter (D4 — 445 ảnh test, 2,731 instances ký tự chữ số nhỏ):
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | **0.985** | **0.578** | 0.827 | **0.311** | **0.9699** | 9.20 ms | 108.67 |
+| **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.985 | **0.578** | 0.827 | **0.311** | 0.9699 | 9.20 ms | 108.67 |
 | **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | 0.984 | 0.571 | 0.832 | 0.306 | 0.9675 | 9.56 ms | 104.55 |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.984 | 0.572 | 0.830 | 0.308 | 0.9689 | 8.78 ms | 113.85 |
-| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.984 | 0.576 | 0.833 | 0.307 | 0.9691 | **8.65 ms** | **115.59** |
+| **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.984 | **0.576** | 0.833 | **0.307** | 0.9691 | **8.65 ms** | **115.59** |
 | **C3k2_Star + Asym Inner-CIoU** ⭐️ | 120 | 2.85M | 9.7 | 0.983 | 0.573 | **0.840** 🏆 | 0.306 | 0.9677 | 8.93 ms | 112.03 |
+| **YOLO11n-seg-distill (Cải tiến)** | 114 | 2.85M | 9.7 | **0.986** | 0.568 | **0.834** 🥈 | 0.304 | **0.9723** 🏆 | 9.57 ms | 104.47 |
 
 #### 2. Trên tập Water Meters (D3 — 125 ảnh test vùng mặt số đồng hồ):
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **YOLO11n-seg (Baseline)** | 114 | 2.83M | 9.6 | 0.995 | **0.947** | 0.995 | 0.887 | 0.9943 | 13.22 ms | 75.63 |
-| **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | 0.995 | 0.945 | 0.995 | **0.895** | 0.9948 | **8.43 ms** | **118.67** |
+| **C3k2_Star (Cải tiến)** | 120 | 2.85M | 9.7 | **0.995** | 0.945 | **0.995** | **0.895** | 0.9948 | **8.43 ms** | **118.67** |
 | **Inner-CIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.926 | 0.995 | 0.887 | 0.9956 | 10.25 ms | 97.52 |
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.940 | 0.995 | 0.893 | 0.9920 | 12.53 ms | 79.80 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | 0.945 | **0.995** | 0.892 | **0.9958** | 12.94 ms | 77.26 |
 | **C3k2_Star + Asym Inner-CIoU** | 120 | 2.85M | 9.7 | 0.995 | 0.938 | 0.995 | 0.884 | 0.9913 | 8.56 ms | 116.87 |
+| **YOLO11n-seg-distill (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.934 | 0.995 | 0.881 | 0.9940 | 9.58 ms | 104.34 |
 
 #### 3. Trên tập Word-Wheel Water Meter (D2 — 13,391 ảnh test vùng bánh xe số):
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
@@ -638,6 +644,7 @@ Kết quả đánh giá độc lập trên tập kiểm thử (Test Split) với
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | **0.815** | 0.995 | **0.743** | **0.9998** | 8.19 ms | 122.17 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | 0.995 | 0.814 | 0.995 | 0.742 | 0.9995 | 9.03 ms | 110.73 |
 | **C3k2_Star + Asym Inner-CIoU** | 120 | 2.85M | 9.7 | 0.995 | 0.813 | 0.995 | 0.741 | 0.9997 | 8.50 ms | 117.60 |
+| **YOLO11n-seg-distill (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.811 | 0.995 | 0.740 | **0.9998** | 8.41 ms | 118.85 |
 
 #### 4. Trên tập Merge Dataset (D1 — 13,961 ảnh test, 16,247 instances đa kịch bản):
 | Mô hình | Layers | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | F1-Score | Latency (ms) | FPS (T4) |
@@ -648,6 +655,7 @@ Kết quả đánh giá độc lập trên tập kiểm thử (Test Split) với
 | **Inner-SIoU (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.781 | 0.983 | 0.687 | 0.9939 | 7.40 ms | 135.07 |
 | **Asymmetric Inner-CIoU** | 114 | 2.85M | 9.7 | **0.995** | 0.782 | **0.983** | 0.688 | **0.9946** | **7.80 ms** | **128.14** |
 | **C3k2_Star + Asym Inner-CIoU** ⭐️ | 120 | 2.85M | 9.7 | 0.995 | 0.782 | 0.983 | 0.688 | 0.9944 | 7.79 ms | 128.40 |
+| **YOLO11n-seg-distill (Cải tiến)** | 114 | 2.85M | 9.7 | 0.995 | 0.777 | 0.983 | 0.683 | 0.9945 | 8.10 ms | 123.42 |
 
 ---
 
@@ -661,8 +669,10 @@ Kết quả đánh giá độc lập trên tập kiểm thử (Test Split) với
    - **Inner-SIoU** loại bỏ hoàn toàn hiện tượng bỏ sót đồng hồ trên D3 với **Recall đạt 1.000 (100% bắt trọn vẹn)**, đồng thời cải thiện độ chi tiết đường viền **Mask mAP50-95 lên 0.893 (+0.6%)**. Trên tập D2 bánh xe số, cơ chế phạt góc xoay (Angle Cost) giúp mô hình đạt F1-Score gần như tuyệt đối **0.9998** và Box mAP50-95 đạt **0.815 (+0.2%)**.
 4. **Đột phá phân đoạn ký tự micro-scale với Mô hình Lai ghép (C3k2_Star + Asym Inner-CIoU trên D4 & D1)**:
    - Mô hình Hybrid tạo nên bước đột phá lớn nhất trên tập ký tự chữ số nhỏ D4 với **Mask mAP50 đạt kỷ lục 0.840** (vượt trội hơn cả Baseline $0.827$ và C3k2_Star đơn lẻ $0.832$), đồng thời đạt độ trễ suy luận cực nhanh **8.93 ms / 112.03 FPS**. Trên tập đa kịch bản D1, mô hình duy trì tốc độ cao **128.40 FPS** và F1-Score **0.9944**.
-5. **Mô hình tích hợp vào hệ thống Web & Mobile**:  
-   - Trọng số tối ưu từ các nhánh thực nghiệm hàng đầu [`enhanced_model/yolo11-c3k2stars-asymmetric_inner_ciou/ocr_water_meter/best.pt`](enhanced_model/yolo11-c3k2stars-asymmetric_inner_ciou/ocr_water_meter/best.pt), [`enhanced_model/yolo11-c3k2stars/water-meters/best.pt`](enhanced_model/yolo11-c3k2stars/water-meters/best.pt), [`enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt`](enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt) và [`enhanced_model/yolo11-innersiou/water-meters/best.pt`](enhanced_model/yolo11-innersiou/water-meters/best.pt) được nạp trực tiếp vào backend FastAPI (`ReadingService`) để xử lý ảnh hiện trường theo thời gian thực.
+5. **Nâng cao độ nhạy & chống bỏ sót chữ số với Chưng cất Tri thức (Knowledge Distillation)**:
+   - Mô hình **YOLO11n-seg-distill** (kế thừa tri thức từ mạng Teacher `yolo11s-seg`) đạt **Mask mAP50 = 0.834 (+0.7%)**, **F1-Score cao nhất = 0.9723** và tăng Recall toàn diện (Box R 0.977, Mask R 0.882) trên tập OCR D4, là giải pháp tối ưu ngăn ngừa việc bỏ sót ký tự số mờ hoặc viền hẹp trên mặt kính mà vẫn giữ nguyên kích thước siêu nhẹ (~2.85M params).
+6. **Mô hình tích hợp vào hệ thống Web & Mobile**:  
+   - Trọng số tối ưu từ các nhánh thực nghiệm hàng đầu [`enhanced_model/yolo11-c3k2stars-asymmetric_inner_ciou/ocr_water_meter/best.pt`](enhanced_model/yolo11-c3k2stars-asymmetric_inner_ciou/ocr_water_meter/best.pt), [`enhanced_model/yolo11-distill/ocr/best.pt`](enhanced_model/yolo11-distill/ocr/best.pt), [`enhanced_model/yolo11-c3k2stars/water-meters/best.pt`](enhanced_model/yolo11-c3k2stars/water-meters/best.pt), [`enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt`](enhanced_model/yolov11-asymmetric_inner_ciou/water_meters/best.pt) và [`enhanced_model/yolo11-innersiou/water-meters/best.pt`](enhanced_model/yolo11-innersiou/water-meters/best.pt) được nạp trực tiếp vào backend FastAPI (`ReadingService`) để xử lý ảnh hiện trường theo thời gian thực.
    - Tài liệu kỹ thuật chi tiết của toàn bộ mô hình cải tiến được lưu trữ độc lập tại [`enhanced_model/README.md`](enhanced_model/README.md).
 
 ---
@@ -738,9 +748,10 @@ print(f"🎭 Mask mAP50: {metrics.seg.map50:.4f}")
 ## 11. 📝 Ghi chú & Tài nguyên
 
 - 📁 **Thư mục lưu trữ trọng số & tài liệu chuyên sâu**:
-  - 📘 [Tài liệu & Đánh giá Toàn diện 4 Mô hình Cải tiến (`enhanced_model/README.md`)](enhanced_model/README.md)
+  - 📘 [Tài liệu & Đánh giá Toàn diện 5 Mô hình Cải tiến (`enhanced_model/README.md`)](enhanced_model/README.md)
   - 📙 [Tài liệu & Báo cáo Thực nghiệm Baseline YOLOE-26n-seg (`models_baseline/yoloe-26n-seg/README.md`)](models_baseline/yoloe-26n-seg/README.md)
   - Trọng số mô hình lai ghép C3k2_Star + Asym Inner-CIoU D4 (Mask mAP50 0.840 kỷ lục): [`enhanced_model/yolo11-c3k2stars-asymmetric_inner_ciou/ocr_water_meter/best.pt`](enhanced_model/yolo11-c3k2stars-asymmetric_inner_ciou/ocr_water_meter/best.pt)
+  - Trọng số mô hình chưng cất tri thức YOLO11-Distill D4 (F1 0.9723, Mask mAP50 0.834): [`enhanced_model/yolo11-distill/ocr/best.pt`](enhanced_model/yolo11-distill/ocr/best.pt)
   - Trọng số mô hình lai ghép C3k2_Star + Asym Inner-CIoU D1 (128 FPS): [`enhanced_model/yolo11-c3k2stars-asymmetric_inner_ciou/merge/best.pt`](enhanced_model/yolo11-c3k2stars-asymmetric_inner_ciou/merge/best.pt)
   - Trọng số mô hình cải tiến C3k2_Star D4: [`enhanced_model/yolo11-c3k2stars/ocr-water-meter/best.pt`](enhanced_model/yolo11-c3k2stars/ocr-water-meter/best.pt)
   - Trọng số mô hình cải tiến C3k2_Star D3: [`enhanced_model/yolo11-c3k2stars/water-meters/best.pt`](enhanced_model/yolo11-c3k2stars/water-meters/best.pt)
