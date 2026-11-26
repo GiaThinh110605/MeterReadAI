@@ -42,6 +42,8 @@
   - [9.5. Đánh giá Tổng kết & Định hướng Ứng dụng Thực tế](#95-đánh-giá-tổng-kết--định-hướng-ứng-dụng-thực-tế)
 - [10. 💻 Hướng dẫn Cài đặt & Huấn luyện Mô hình Cải tiến](#10--hướng-dẫn-cài-đặt--huấn-luyện-mô-hình-cải-tiến)
 - [11. 📝 Ghi chú & Tài nguyên](#11--ghi-chú--tài-nguyên)
+- [12. 🚀 Hướng Dẫn Cài Đặt & Khởi Chạy (Quick Start)](#12--hướng-dẫn-cài-đặt--khởi-chạy-quick-start)
+- [13. 📈 Giám sát Mô hình AI trong Docker (Prometheus & Grafana)](#13--giám-sát-mô-hình-ai-trong-docker-prometheus--grafana)
 
 ---
 
@@ -605,8 +607,18 @@ Nhóm đã nghiên cứu và triển khai **5 giải pháp cải tiến chuyên 
 - **Tác dụng**: Sự cộng hưởng giữa khả năng ánh xạ không gian vô hạn chiều của phép nhân sao $\star$ (tách các nét số dính nhau) cùng cơ chế hộp phụ trợ bất đối xứng (ôm sát dáng chữ nhật đứng của ký tự và chữ nhật ngang của mặt số) giúp mô hình lập **kỷ lục Mask mAP50 đạt 0.840** trên tập ký tự nhỏ D4 (vượt trội hơn cả Baseline $0.827$ và C3k2_Star đơn lẻ $0.832$), đồng thời đạt tốc độ suy luận cực nhanh **112.03 – 128.40 FPS**.
 
 #### 6. Knowledge Distillation — Chưng cất Tri thức từ YOLO11s-seg sang YOLO11n-seg
-- **Nguyên lý**: Sử dụng mạng giáo viên `yolo11s-seg` (9.4M params) hướng dẫn mạng học sinh nhẹ `yolo11n-seg` (2.85M params) thông qua phân bố soft-labels và hàm mất mát chưng cất tri thức.
-- **Tác dụng**: Khắc phục giới hạn dung lượng của mạng Nano trên tập ký tự chữ số nhỏ D4, nâng **Mask mAP50 lên 0.834 (+0.7%)**, **F1-Score đạt 0.9723** và tăng Recall toàn diện (Box R 0.977, Mask R 0.882) với kích thước mô hình siêu nhẹ (~2.85M params) và tốc độ trên 104 FPS trên GPU Tesla T4.
+- **Nguyên lý & Cơ chế hoạt động ([Ultralytics Knowledge Distillation](https://docs.ultralytics.com/guides/knowledge-distillation#how-it-works))**:
+  1. **Teacher đóng băng (`eval`):** Mạng giáo viên (`yolo11s-seg`, 9.4M params) giữ nguyên ở chế độ `eval` và chạy suy luận trên từng batch ảnh.
+  2. **Trích xuất đặc trưng tại Neck:** Thu nhận feature map từ cả Teacher và Student tại **3 tầng neck** đầu vào của đầu Detect/Segment.
+  3. **Projector (`1×1 Conv + ReLU`):** Dùng khối chiếu gồm 2 lớp tích chập `1×1` kèm ReLU để căn chỉnh số kênh đặc trưng của Student khớp với Teacher.
+  4. **Score-weighted L2 Loss:** So sánh đặc trưng Student (sau chiếu) với Teacher bằng mất mát L2, có trọng số theo **độ tin cậy phân lớp của Teacher**.
+  5. **Tổng hợp & Cập nhật:** Cộng hàm mất mát chưng cất vào task loss chuẩn theo trọng số `dis` ($\mathcal{L}_{total} = \mathcal{L}_{task} + dis \cdot \mathcal{L}_{distill}$) để cập nhật đồng thời **Student** (`yolo11n-seg`, 2.85M params) và **Projector**.
+
+| Kiến trúc Teacher – Student | Luồng tính Loss & Cập nhật (How It Works) |
+| :---: | :---: |
+| ![Knowledge Distillation Teacher Student](README_IMAGE/kd_teacher_student.png) | ![Knowledge Distillation How It Works](README_IMAGE/kd_how_it_works.png) |
+
+- **Tác dụng thực nghiệm**: Khắc phục giới hạn dung lượng của mạng Nano trên tập ký tự chữ số nhỏ D4, nâng **Mask mAP50 lên 0.834 (+0.7%)**, **F1-Score đạt 0.9723** và tăng Recall toàn diện (Box R 0.977, Mask R 0.882) với kích thước mô hình siêu nhẹ (~2.85M params) và tốc độ trên 104 FPS trên GPU Tesla T4.
 
 ---
 
@@ -775,6 +787,8 @@ docker compose up --build
 ```
 - **Frontend UI (Nhân viên tác nghiệp)**: [http://localhost:3000](http://localhost:3000)
 - **Backend API Docs (Swagger UI)**: [http://localhost:8000/api/v1/docs](http://localhost:8000/api/v1/docs)
+- **Prometheus (Thu thập Metrics)**: [http://localhost:9090](http://localhost:9090)
+- **Grafana (Dashboard Giám sát)**: [http://localhost:9000](http://localhost:9000) *(tài khoản mặc định: `admin` / `admin`)*
 
 ### Cách 2: Khởi chạy thủ công từng phần
 
@@ -804,4 +818,25 @@ Chi tiết từng bước cấu hình Production, Socket Gunicorn, Reverse Proxy
 ```bash
 python3 -m pytest backend/tests -v
 ```
+
+---
+
+## 13. 📈 Giám sát Mô hình AI trong Docker (Prometheus & Grafana)
+
+Hệ thống được đóng gói cùng **Prometheus** (`9090`) và **Grafana** (`9000`) trong `docker-compose.yml` để theo dõi trực tiếp sức khỏe API và hiệu năng pipeline **YOLO11-seg (ONNX) + CRNN (CPU)** qua endpoint `/metrics` (`prometheus-fastapi-instrumentator` + `backend/app/core/metrics.py`).
+
+### 13.1. Lưu lượng HTTP & Trạng thái suy luận (`ai_predictions_total`)
+
+| Prometheus (`:9090`) — `http_requests_total` | Grafana (`:9000`) — `ai_predictions_total` |
+| :---: | :---: |
+| ![Prometheus HTTP Requests](README_IMAGE/prometheus_http_requests.png) | ![Grafana Predictions Total](README_IMAGE/grafana_predictions_total.png) |
+| Scrape `/metrics` mỗi `15s` qua mạng nội bộ Docker (`backend:8000`), ghi nhận request tới `/api/v1/ai/predict` và `/api/v1/tariffs/calculate` với `status="2xx"`. | Cả **4/4** lượt suy luận đạt `status="success"` (`0` ca `empty_crop`, `empty_ocr`, `error`), xác nhận pipeline chạy ổn định trong container. |
+
+### 13.2. Độ tin cậy & Phân tích Bottleneck Độ trễ (CPU)
+
+| Grafana — Độ tin cậy (`det` / `rec` / `overall`) | Grafana — Độ trễ p95 (`yolo` / `crnn` / `total`) |
+| :---: | :---: |
+| ![Grafana Confidence](README_IMAGE/grafana_confidence.jpg) | ![Grafana Latency p95](README_IMAGE/grafana_latency_p95.jpg) |
+| **`rec` (CRNN)** đạt `0,95–0,96`, trong khi **`det` (YOLO)** quanh `0,80` kéo `overall` về `~0,875` → điểm nghẽn chất lượng nằm ở khâu phát hiện vùng số. | **p95 `total ≈ 4,22s`** trùng khít đường **`yolo`**, còn **`crnn` chỉ `< 0,1s`** → điểm nghẽn độ trễ do *cold-start* ONNX Runtime lần đầu trên CPU (các ảnh sau ~`0,1–0,25s`), có thể khắc phục bằng *warm-up* khi khởi động server. |
+
 

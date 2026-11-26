@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.api.v1.api_router import api_router
 from app.seeds.seed_data import seed_database
+from prometheus_fastapi_instrumentator import Instrumentator
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,6 +46,9 @@ def root():
         "docs": f"{settings.API_V1_STR}/docs",
         "status": "online"
     }
+
+Instrumentator().instrument(app).expose(app)
+
 
 if __name__ == "__main__":
     import uvicorn

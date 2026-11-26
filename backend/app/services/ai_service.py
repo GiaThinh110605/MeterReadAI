@@ -12,6 +12,12 @@ from torchvision import transforms
 from fastapi import HTTPException, status
 from app.core.config import settings
 from app.schemas.ai import PolygonPoint, PredictionDetail, VisualizationDetail
+from app.core.metrics import (
+    AI_PREDICTIONS_TOTAL,
+    AI_LATENCY,
+    AI_CONFIDENCE,
+    AI_IN_PROGRESS,
+)
 
 logger = logging.getLogger("uvicorn")
 
@@ -235,57 +241,61 @@ class AIService:
         polygon = []
         cropped_img = None
         det_conf = 0.0
+        yolo_error = False
 
-        if self.yolo_model is not None:
-            try:
-                results = self.yolo_model(img, conf=0.25, verbose=False)
-                if len(results) > 0 and len(results[0].boxes) > 0:
-                    box = results[0].boxes[0]
-                    det_conf = round(float(box.conf[0].item()), 3)
-                    x1, y1, x2, y2 = [int(v.item()) for v in box.xyxy[0]]
-                    bbox = [max(0, x1), max(0, y1), min(w, x2), min(h, y2)]
-                    
-                    if results[0].masks is not None and len(results[0].masks) > 0 and len(results[0].masks.xy[0]) >= 3:
-                        seg = results[0].masks.xy[0]
-                        poly_pts = seg.astype(np.int32)
-                        polygon = [PolygonPoint(x=int(pt[0]), y=int(pt[1])) for pt in poly_pts]
+        with AI_IN_PROGRESS.track_inprogress(), AI_LATENCY.labels(stage="total").time():
+            if self.yolo_model is not None:
+                try:
+                    with AI_LATENCY.labels(stage="yolo").time():
+                        results = self.yolo_model(img, conf=0.25, verbose=False)
+                    if len(results) > 0 and len(results[0].boxes) > 0:
+                        box = results[0].boxes[0]
+                        det_conf = round(float(box.conf[0].item()), 3)
+                        x1, y1, x2, y2 = [int(v.item()) for v in box.xyxy[0]]
+                        bbox = [max(0, x1), max(0, y1), min(w, x2), min(h, y2)]
                         
-                        # 1. Cắt chính xác theo ranh giới đa giác (Polygon Masked Crop)
-                        mask = np.zeros((h, w), dtype=np.uint8)
-                        cv2.fillPoly(mask, [poly_pts], 255)
-                        
-                        # Giữ vùng bên trong đa giác, phủ trắng vùng ngoài để loại bỏ nhiễu cho OCR
-                        masked_img = np.full_like(img, 255)
-                        masked_img[mask == 255] = img[mask == 255]
-                        
-                        # Cắt sát vùng bao quanh đa giác
-                        px, py, pbw, pbh = cv2.boundingRect(poly_pts)
-                        px1, py1 = max(0, px), max(0, py)
-                        px2, py2 = min(w, px + pbw), min(h, py + pbh)
-                        cropped_img = masked_img[py1:py2, px1:px2]
-                        
-                        # Cập nhật bbox khớp với bounding rect của đa giác
-                        bbox = [px1, py1, px2, py2]
-                    else:
-                        polygon = [
-                            PolygonPoint(x=bbox[0], y=bbox[1]),
-                            PolygonPoint(x=bbox[2], y=bbox[1]),
-                            PolygonPoint(x=bbox[2], y=bbox[3]),
-                            PolygonPoint(x=bbox[0], y=bbox[3]),
-                        ]
-                        cropped_img = img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-            except Exception:
-                pass
+                        if results[0].masks is not None and len(results[0].masks) > 0 and len(results[0].masks.xy[0]) >= 3:
+                            seg = results[0].masks.xy[0]
+                            poly_pts = seg.astype(np.int32)
+                            polygon = [PolygonPoint(x=int(pt[0]), y=int(pt[1])) for pt in poly_pts]
+                            
+                            # 1. Cắt chính xác theo ranh giới đa giác (Polygon Masked Crop)
+                            mask = np.zeros((h, w), dtype=np.uint8)
+                            cv2.fillPoly(mask, [poly_pts], 255)
+                            
+                            # Giữ vùng bên trong đa giác, phủ trắng vùng ngoài để loại bỏ nhiễu cho OCR
+                            masked_img = np.full_like(img, 255)
+                            masked_img[mask == 255] = img[mask == 255]
+                            
+                            # Cắt sát vùng bao quanh đa giác
+                            px, py, pbw, pbh = cv2.boundingRect(poly_pts)
+                            px1, py1 = max(0, px), max(0, py)
+                            px2, py2 = min(w, px + pbw), min(h, py + pbh)
+                            cropped_img = masked_img[py1:py2, px1:px2]
+                            
+                            # Cập nhật bbox khớp với bounding rect của đa giác
+                            bbox = [px1, py1, px2, py2]
+                        else:
+                            polygon = [
+                                PolygonPoint(x=bbox[0], y=bbox[1]),
+                                PolygonPoint(x=bbox[2], y=bbox[1]),
+                                PolygonPoint(x=bbox[2], y=bbox[3]),
+                                PolygonPoint(x=bbox[0], y=bbox[3]),
+                            ]
+                            cropped_img = img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                except Exception:
+                    yolo_error = True
 
-        if cropped_img is None or cropped_img.size == 0 or len(bbox) == 0:
-            bbox = []
-            polygon = []
-            det_conf = 0.0
-            raw_seq = ""
-            rec_conf = 0.0
-        else:
-            cv2.imwrite(str(crop_path), cropped_img)
-            raw_seq, rec_conf = self._ocr_crop(cropped_img)
+            if cropped_img is None or cropped_img.size == 0 or len(bbox) == 0:
+                bbox = []
+                polygon = []
+                det_conf = 0.0
+                raw_seq = ""
+                rec_conf = 0.0
+            else:
+                cv2.imwrite(str(crop_path), cropped_img)
+                with AI_LATENCY.labels(stage="crnn").time():
+                    raw_seq, rec_conf = self._ocr_crop(cropped_img)
         
         predicted_seq = raw_seq
         try:
@@ -322,5 +332,23 @@ class AIService:
             imageWidth=w,
             imageHeight=h
         )
+
+        if yolo_error:
+            pred_status = "error"
+        elif cropped_img is None or cropped_img.size == 0 or len(bbox) == 0:
+            pred_status = "empty_crop"
+        elif not predicted_seq:
+            pred_status = "empty_ocr"
+        else:
+            pred_status = "success"
+
+        AI_PREDICTIONS_TOTAL.labels(
+            status=pred_status,
+            model_version="yolo11n-seg-crnn-v2.1"
+        ).inc()
+        AI_CONFIDENCE.labels(stage="det").observe(det_conf)
+        AI_CONFIDENCE.labels(stage="rec").observe(rec_conf)
+        AI_CONFIDENCE.labels(stage="overall").observe(overall_conf)
+
 
         return prediction, visualization, raw_url, crop_url
