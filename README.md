@@ -13,6 +13,10 @@
 - 🎨 **Nguyên mẫu UI hoàn chỉnh (Google Stitch)**: [https://stitch.withgoogle.com/projects/3346993615529581711](https://stitch.withgoogle.com/projects/3346993615529581711)
 - 🚀 **Mô hình cải tiến cốt lõi**: `c3k2stars` (YOLO11n-seg tích hợp StarNet C3k2_Star tại P3), `yolo11-distill` (Chưng cất tri thức từ YOLO11s-seg), `asymmetric-inner-ciou` & mô hình lai ghép `c3k2stars-asymmetric_inner_ciou` (Mask mAP50 kỷ lục 0.840)
 
+### 🔄 Quy trình Tổng thể Hệ thống (End-to-End Pipeline)
+
+![Quy trình xây dựng hệ thống MeterReadAI & WaterFlow](README_IMAGE/end_to_end_pipeline.png)
+
 ---
 
 ## 📑 Mục lục
